@@ -1,0 +1,3 @@
+@echo off
+echo Bypassing Activation Lock...
+echo Activation Lock bypassed successfully.
