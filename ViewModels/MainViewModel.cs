@@ -137,6 +137,7 @@ namespace infex1rn.ViewModels
         public ICommand RamdiskExploitCommand { get; }
         public ICommand A10HelloBypassCommand { get; }
         public ICommand UnthetheredBypassCommand { get; }
+        public ICommand AutoExtractRamdiskCommand { get; }
 
         public MainViewModel()
         {
@@ -170,6 +171,72 @@ namespace infex1rn.ViewModels
             RamdiskExploitCommand = new RelayCommand(RamdiskExploit);
             A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
             UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
+            AutoExtractRamdiskCommand = new RelayCommand(AutoExtractRamdisk);
+        }
+
+        private async void AutoExtractRamdisk()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog 
+                { 
+                    Filter = "IPSW files (*.ipsw)|*.ipsw|All files (*.*)|*.*",
+                    Title = "Select IPSW to Extract Ramdisk From"
+                };
+                
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    ToolOutput = "=== Auto Ramdisk Extraction ===\n\n";
+                    ToolOutput += $"IPSW: {openFileDialog.FileName}\n\n";
+                    ToolOutput += "Extracting ramdisk and boot files...\n";
+                    ToolOutput += "This may take a few minutes...\n\n";
+
+                    var result = await _ramdiskService.AutoExtractFromIpsw(
+                        openFileDialog.FileName,
+                        (message) =>
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                ToolOutput += message + "\n";
+                            });
+                        }
+                    );
+
+                    ToolOutput += "\n=== Extraction Complete ===\n\n";
+                    
+                    if (result.Success)
+                    {
+                        ToolOutput += "[+] Ramdisk extracted successfully!\n";
+                        ToolOutput += $"[+] Ramdisk path: {result.RamdiskPath}\n";
+                        ToolOutput += $"[+] Boot files extracted: {result.BootFilesExtracted.Count}\n";
+                        
+                        foreach (var file in result.BootFilesExtracted)
+                        {
+                            ToolOutput += $"    - {file}\n";
+                        }
+                        
+                        if (result.PatchScriptCreated)
+                        {
+                            ToolOutput += "\n[+] Setup.app patch script created!\n";
+                            ToolOutput += "[*] The patch script will remove Setup.app for iCloud bypass\n";
+                        }
+                        
+                        ToolOutput += "\n[*] Next steps:\n";
+                        ToolOutput += "    1. Put device in DFU mode\n";
+                        ToolOutput += "    2. Click 'Untethered Bypass' button\n";
+                        ToolOutput += "    3. Or use 'Ramdisk Exploit' with the extracted ramdisk\n";
+                    }
+                    else
+                    {
+                        ToolOutput += $"[!] Extraction failed: {result.Error}\n";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput += $"\n[!] Error: {ex.Message}\n";
+            }
         }
 
         private async void BypassActivationLock()

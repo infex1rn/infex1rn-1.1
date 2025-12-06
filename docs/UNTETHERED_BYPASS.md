@@ -29,17 +29,48 @@ Untethered bypass works on checkm8-compatible devices:
 | iPhone 8/8+ | A11 | 12.0 - 16.7.x |
 | iPhone X | A11 | 12.0 - 16.7.x |
 
+## Auto Extract Ramdisk (Recommended)
+
+The easiest way to get started is using the **Auto Extract Ramdisk** feature:
+
+### Using the GUI
+1. Go to **System Utilities** tab
+2. Click **"Auto Extract Ramdisk (from IPSW)"** (blue button)
+3. Select your IPSW file
+4. Wait for extraction to complete
+5. The tool will automatically:
+   - Extract the ramdisk from IPSW
+   - Extract boot files (iBSS, iBEC, etc.)
+   - Create a patch script to remove Setup.app
+
+### Using Command Line
+```batch
+cd tools
+auto_ramdisk.bat path\to\your.ipsw
+```
+
+### What Auto Extract Does
+1. **Extracts IPSW** - Unpacks the firmware ZIP file
+2. **Locates Ramdisk** - Finds the restore ramdisk DMG
+3. **Extracts Boot Files** - Copies iBSS, iBEC, device tree, etc.
+4. **Creates Patch Script** - Generates `patch_setup_app.sh` that:
+   - Mounts device filesystems
+   - Renames Setup.app to Setup.app.bak
+   - Sets auto-boot for persistent bypass
+
 ## Required Files
 
-Place these files in the `ramdisks/` directory:
+After extraction, these files will be in the `ramdisks/` directory:
 
-1. **ibss.img4** - iBSS bootloader (device-specific)
-2. **ibec.img4** - iBEC bootloader (device-specific)
-3. **ramdisk.dmg** - SSH ramdisk with bypass tools
-4. **devicetree.img4** - Device tree (device-specific)
-5. **trustcache.img4** - Trust cache for code signing
+1. **ramdisk.dmg** - SSH ramdisk
+2. **patch_setup_app.sh** - Script to remove Setup.app
+3. **ibss.im4p** - iBSS bootloader (device-specific)
+4. **ibec.im4p** - iBEC bootloader (device-specific)
+5. **devicetree.im4p** - Device tree (device-specific)
 
-## How to Get Required Files
+## Manual File Acquisition
+
+If auto-extraction doesn't work for your device:
 
 ### Option 1: Use SSHRD_Script
 ```bash
@@ -47,7 +78,7 @@ Place these files in the `ramdisks/` directory:
 ./sshrd.sh <iOS version>
 ```
 
-### Option 2: Extract from IPSW
+### Option 2: Manual IPSW Extract
 1. Download IPSW from ipsw.me
 2. Use CFW Studio in infex1rn to extract components
 3. Decrypt and patch using img4tool
@@ -57,13 +88,19 @@ Check community resources for pre-built ramdisk packages.
 
 ## Usage
 
-### Step 1: Put Device in DFU Mode
+### Step 1: Extract Ramdisk (if not done)
+1. Click "Auto Extract Ramdisk (from IPSW)"
+2. Select your device's IPSW file
+3. Wait for extraction
+
+### Step 2: Put Device in DFU Mode
 1. Connect device to computer
 2. Hold Power + Home (or Volume Down for iPhone 7+)
 3. Release Power, keep holding Home/Volume Down
 4. Screen should be black (not showing recovery logo)
 
-### Step 2: Run Untethered Bypass
+### Step 3: Run Untethered Bypass
+Click the green **"Untethered Bypass"** button, or run:
 ```batch
 cd tools
 untethered_bypass.bat hello
@@ -71,17 +108,17 @@ untethered_bypass.bat hello
 
 ### Available Modes
 
-- **hello** - Bypass Hello/Activation screen
+- **hello** - Bypass Hello/Activation screen (removes Setup.app)
 - **passcode** - Bypass passcode (for data recovery)
 - **disabled** - Bypass disabled device
 
 ## What the Bypass Does
 
-### Hello/Activation Bypass
+### Hello/Activation Bypass (Setup.app Removal)
 1. Boots SSH ramdisk using checkm8
 2. Mounts device filesystems
-3. Moves/patches Setup.app
-4. Writes activation records
+3. Renames Setup.app to Setup.app.bak
+4. Writes activation bypass markers
 5. Sets nvram to auto-boot
 6. Reboots device
 
@@ -99,9 +136,14 @@ untethered_bypass.bat hello
 - Device must be A7-A11 chip
 
 ### "iBSS/iBEC not found"
-- Download/create boot files for your specific device
+- Run "Auto Extract Ramdisk" with your device's IPSW
+- Or manually download boot files for your specific device
 - Place them in the `ramdisks/` directory
-- File names must match exactly
+
+### "Ramdisk not found in IPSW"
+- Ensure the IPSW is not corrupted
+- Try downloading the IPSW again
+- Make sure it's for a supported device
 
 ### Bypass doesn't persist after reboot
 - Ensure all steps completed successfully
