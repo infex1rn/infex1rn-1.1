@@ -158,8 +158,22 @@ namespace infex1rn.Services
                 }
             };
 
-            process.OutputDataReceived += (sender, args) => onOutput(args.Data);
-            process.ErrorDataReceived += (sender, args) => onOutput(args.Data);
+            process.OutputDataReceived += (sender, args) => 
+            {
+                if (args.Data != null)
+                {
+                    Console.WriteLine(args.Data);
+                    onOutput(args.Data);
+                }
+            };
+            process.ErrorDataReceived += (sender, args) => 
+            {
+                if (args.Data != null)
+                {
+                    Console.WriteLine(args.Data);
+                    onOutput(args.Data);
+                }
+            };
 
             process.Start();
             process.BeginOutputReadLine();
