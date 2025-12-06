@@ -19,3 +19,10 @@ x86/
 # .NET
 *.nupkg
 *.snupkg
+
+# IPSW files (too large for git)
+*.ipsw
+
+# Ramdisk files (optional, uncomment to exclude)
+# *.dmg
+# *.img4
