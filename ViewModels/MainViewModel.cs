@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using iMobileDevice;
 using iMobileDevice.Plist;
 using iMobileDevice.iDevice;
@@ -20,6 +22,8 @@ namespace infex1rn.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        private const string ExtractedFirmwareDirectory = "extracted_firmware";
+        
         private readonly DeviceService _deviceService;
         private readonly AppService _appService;
         private readonly FirmwareService _firmwareService;
@@ -138,6 +142,10 @@ namespace infex1rn.ViewModels
         public ICommand A10HelloBypassCommand { get; }
         public ICommand UnthetheredBypassCommand { get; }
         public ICommand AutoExtractRamdiskCommand { get; }
+        public ICommand AutoPrepareBypassCommand { get; }
+        public ICommand DownloadIpswCommand { get; }
+        public ICommand SshRamdiskCommand { get; }
+        public ICommand AutoRamdiskBatchCommand { get; }
 
         public MainViewModel()
         {
@@ -172,6 +180,10 @@ namespace infex1rn.ViewModels
             A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
             UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
             AutoExtractRamdiskCommand = new RelayCommand(AutoExtractRamdisk);
+            AutoPrepareBypassCommand = new RelayCommand(AutoPrepareBypass);
+            DownloadIpswCommand = new RelayCommand(DownloadIpsw);
+            SshRamdiskCommand = new RelayCommand(SshRamdisk);
+            AutoRamdiskBatchCommand = new RelayCommand(AutoRamdiskBatch);
         }
 
         private async void AutoExtractRamdisk()
@@ -340,6 +352,37 @@ namespace infex1rn.ViewModels
             {
                 _unpackedRamdiskPath = await _ramdiskService.UnpackRamdisk(openFileDialog.FileName);
                 PopulateRamdiskTree();
+
+                // Automatically prepare all bypass files
+                ToolOutput = ""; // Clear previous output
+                var result = await _ramdiskService.AutoPrepareBypassFiles(AppendToToolOutput);
+
+                if (result.AllFilesReady)
+                {
+                    MessageBox.Show(
+                        "All bypass files are ready!\n\n" +
+                        "Files prepared:\n" +
+                        "  • gaster.exe\n" +
+                        $"  • {result.IBSSFile}\n" +
+                        $"  • {result.IBECFile}\n" +
+                        "  • ramdisk.dmg\n" +
+                        "  • patch_setup_app.sh\n\n" +
+                        "You can now run the bypass from System Utilities.",
+                        "Bypass Ready",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else if (result.MissingFiles.Count > 0)
+                {
+                    MessageBox.Show(
+                        $"Ramdisk loaded, but missing {result.MissingFiles.Count} required file(s) for bypass.\n\n" +
+                        "Missing:\n" +
+                        string.Join("\n", result.MissingFiles.Select(f => $"  • {f}")) + "\n\n" +
+                        "Use 'Auto Extract Ramdisk' in System Utilities to get missing files.",
+                        "Missing Files",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
         }
 
@@ -388,6 +431,56 @@ namespace infex1rn.ViewModels
                 await _ramdiskService.RepackRamdisk(_unpackedRamdiskPath, saveFileDialog.FileName);
                 MessageBox.Show("Ramdisk saved successfully.");
             }
+        }
+
+        private async void AutoPrepareBypass()
+        {
+            ToolOutput = ""; // Clear previous output
+            var result = await _ramdiskService.AutoPrepareBypassFiles(AppendToToolOutput);
+
+            if (result.AllFilesReady)
+            {
+                MessageBox.Show(
+                    "All bypass files are ready!\n\n" +
+                    "Files prepared:\n" +
+                    "  • gaster.exe (boot pwned DFU)\n" +
+                    $"  • {result.IBSSFile} (bootchain stage 1)\n" +
+                    $"  • {result.IBECFile} (bootchain stage 2)\n" +
+                    "  • ramdisk.dmg (actual ramdisk)\n" +
+                    "  • patch_setup_app.sh (patch bypass)\n\n" +
+                    "Next steps:\n" +
+                    "  1. Put device in DFU mode\n" +
+                    "  2. Run 'Untethered Bypass' from System Utilities\n" +
+                    "  3. Or use bypass batch scripts in tools/",
+                    "Bypass Ready ✅",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else if (result.MissingFiles.Count > 0)
+            {
+                MessageBox.Show(
+                    $"Missing {result.MissingFiles.Count} required file(s) for bypass.\n\n" +
+                    "Missing:\n" +
+                    string.Join("\n", result.MissingFiles.Select(f => $"  • {f}")) + "\n\n" +
+                    "To get missing files:\n" +
+                    "  Go to System Utilities → 'Auto Extract Ramdisk'\n" +
+                    "  Select your device's IPSW file\n\n" +
+                    "Check System Utilities tab for detailed output.",
+                    "Missing Files ⚠️",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to append messages to ToolOutput on UI thread
+        /// </summary>
+        private void AppendToToolOutput(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ToolOutput += message + "\n";
+            });
         }
 
         private async void EnterPwnDfu()
@@ -615,18 +708,40 @@ namespace infex1rn.ViewModels
 
         private void LoadIpsw()
         {
-            IsRamdiskPresent = false;
-            _ramdiskPath = null;
-
             var openFileDialog = new OpenFileDialog { Filter = "IPSW files (*.ipsw)|*.ipsw|All files (*.*)|*.*" };
             if (openFileDialog.ShowDialog() == true)
             {
-                _currentIpswPath = openFileDialog.FileName;
+                LoadIpswFile(openFileDialog.FileName);
+            }
+        }
+
+        /// <summary>
+        /// Loads an IPSW file from a given path. Used by both file dialog and drag-drop.
+        /// </summary>
+        public void LoadIpswFile(string ipswPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(ipswPath) || !File.Exists(ipswPath))
+                {
+                    MessageBox.Show("Invalid IPSW file path.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!ipswPath.EndsWith(".ipsw", StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show("Please select a valid IPSW file.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                IsRamdiskPresent = false;
+                _ramdiskPath = null;
+
                 IpswTree.Clear();
-                var root = new TreeViewItem { Header = Path.GetFileName(_currentIpswPath), Tag = "" };
+                var root = new TreeViewItem { Header = Path.GetFileName(ipswPath), Tag = "" };
                 IpswTree.Add(root);
 
-                var entries = _firmwareService.GetIpswEntries(_currentIpswPath);
+                var entries = _firmwareService.GetIpswEntries(ipswPath);
                 var directories = new Dictionary<string, TreeViewItem> { { "", root } };
 
                 foreach (var entry in entries)
@@ -652,52 +767,135 @@ namespace infex1rn.ViewModels
                     }
                 }
 
-                using (ZipArchive archive = ZipFile.OpenRead(_currentIpswPath))
+                // Try to find ramdisk in BuildManifest.plist
+                try
                 {
-                    var manifestEntry = archive.GetEntry("BuildManifest.plist");
-                    if (manifestEntry != null)
+                    using (ZipArchive archive = ZipFile.OpenRead(ipswPath))
                     {
-                        using (Stream stream = manifestEntry.Open())
+                        var manifestEntry = archive.GetEntry("BuildManifest.plist");
+                        if (manifestEntry != null)
                         {
-                            using (var reader = new StreamReader(stream))
+                            using (Stream stream = manifestEntry.Open())
                             {
-                                string plistXml = reader.ReadToEnd();
-                                var plist = LibiMobileDevice.Instance.Plist;
-                                PlistHandle parsedPlist;
-                                plist.plist_from_xml(plistXml, (uint)plistXml.Length, out parsedPlist);
-                                using(parsedPlist)
+                                using (var reader = new StreamReader(stream))
                                 {
-                                    var buildIdentities = plist.plist_dict_get_item(parsedPlist, "BuildIdentities");
-                                    var firstIdentity = plist.plist_array_get_item(buildIdentities, 0);
-                                    var manifest = plist.plist_dict_get_item(firstIdentity, "Manifest");
-                                    var restoreRamdisk = plist.plist_dict_get_item(manifest, "RestoreRamdisk");
-                                    var info = plist.plist_dict_get_item(restoreRamdisk, "Info");
-                                    var pathNode = plist.plist_dict_get_item(info, "Path");
-
-                                    string path;
-                                    plist.plist_get_string_val(pathNode, out path);
-                                    _ramdiskPath = path;
-                                    IsRamdiskPresent = true;
+                                    string plistXml = reader.ReadToEnd();
+                                    var plist = LibiMobileDevice.Instance.Plist;
+                                    PlistHandle parsedPlist;
+                                    plist.plist_from_xml(plistXml, (uint)plistXml.Length, out parsedPlist);
+                                    using (parsedPlist)
+                                    {
+                                        var buildIdentities = plist.plist_dict_get_item(parsedPlist, "BuildIdentities");
+                                        if (!buildIdentities.IsInvalid && plist.plist_array_get_size(buildIdentities) > 0)
+                                        {
+                                            var firstIdentity = plist.plist_array_get_item(buildIdentities, 0);
+                                            if (!firstIdentity.IsInvalid)
+                                            {
+                                                var manifest = plist.plist_dict_get_item(firstIdentity, "Manifest");
+                                                if (!manifest.IsInvalid)
+                                                {
+                                                    var restoreRamdisk = plist.plist_dict_get_item(manifest, "RestoreRamdisk");
+                                                    if (!restoreRamdisk.IsInvalid)
+                                                    {
+                                                        var info = plist.plist_dict_get_item(restoreRamdisk, "Info");
+                                                        if (!info.IsInvalid)
+                                                        {
+                                                            var pathNode = plist.plist_dict_get_item(info, "Path");
+                                                            if (!pathNode.IsInvalid)
+                                                            {
+                                                                string path;
+                                                                plist.plist_get_string_val(pathNode, out path);
+                                                                _ramdiskPath = path;
+                                                                IsRamdiskPresent = true;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    // Ramdisk extraction from manifest failed, but IPSW is still loaded
+                    MessageBox.Show($"Note: Could not extract ramdisk path from BuildManifest: {ex.Message}\nIPSW loaded successfully.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // Only set the current path after successful loading
+                _currentIpswPath = ipswPath;
+                MessageBox.Show($"IPSW loaded successfully!\n{Path.GetFileName(_currentIpswPath)}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading IPSW: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                IpswTree.Clear();
+                _currentIpswPath = null;
+                IsRamdiskPresent = false;
+                _ramdiskPath = null;
             }
         }
 
         private void ExtractIpsw()
         {
-            if (SelectedIpswItem == null) return;
-            string entryPath = (string)SelectedIpswItem.Tag;
-            _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, "extracted_firmware");
-            MessageBox.Show("Extraction complete.");
+            try
+            {
+                if (SelectedIpswItem == null) return;
+                string entryPath = (string)SelectedIpswItem.Tag;
+                
+                string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
+                if (!Directory.Exists(extractPath))
+                {
+                    Directory.CreateDirectory(extractPath);
+                }
+                
+                _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, extractPath);
+                MessageBox.Show($"Extraction complete.\n\nLocation: {extractPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to extract file.\n\nError: {ex.Message}", "Extraction Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ExtractRamdisk()
         {
-            _firmwareService.ExtractIpswEntry(_currentIpswPath, _ramdiskPath, "extracted_firmware");
-            MessageBox.Show("Ramdisk extracted.");
+            try
+            {
+                if (string.IsNullOrEmpty(_currentIpswPath))
+                {
+                    MessageBox.Show("No IPSW file loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(_ramdiskPath))
+                {
+                    MessageBox.Show("No ramdisk found in this IPSW.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Create extracted_firmware directory if it doesn't exist
+                string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
+                if (!Directory.Exists(extractPath))
+                {
+                    Directory.CreateDirectory(extractPath);
+                }
+
+                _firmwareService.ExtractIpswEntry(_currentIpswPath, _ramdiskPath, extractPath);
+                
+                string extractedFile = Path.Combine(extractPath, Path.GetFileName(_ramdiskPath));
+                MessageBox.Show($"Ramdisk extracted successfully!\n\nLocation: {extractedFile}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Open the folder
+                System.Diagnostics.Process.Start("explorer.exe", extractPath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error extracting ramdisk: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void InstallIpa()
@@ -763,6 +961,122 @@ namespace infex1rn.ViewModels
         private bool CanExtractRamdisk()
         {
             return IsRamdiskPresent;
+        }
+
+        private async void DownloadIpsw()
+        {
+            ToolOutput = "";
+            try
+            {
+                // Use MessageBox for simple input to avoid creating UI in ViewModel
+                var result = MessageBox.Show(
+                    "This will open your browser to download IPSW files.\n\n" +
+                    "Common Device Identifiers:\n" +
+                    "  iPhone 5s: iPhone6,1 / iPhone6,2\n" +
+                    "  iPhone 7: iPhone9,1 / iPhone9,3\n" +
+                    "  iPhone 8: iPhone10,1 / iPhone10,4\n" +
+                    "  iPhone X: iPhone10,3 / iPhone10,6\n\n" +
+                    "Note: You'll need to manually enter the device ID in the browser.\n" +
+                    "Proceed to open ipsw.me?",
+                    "Download IPSW",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string downloadPath = Path.Combine(baseDirectory, "tools", "download_ipsw.bat");
+                    ToolOutput = "Opening IPSW download page...\n";
+                    ToolOutput += "Navigate to your device model to download firmware.\n\n";
+                    await _deviceService.RunExternalTool(downloadPath, "", (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void SshRamdisk()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "IPSW files (*.ipsw)|*.ipsw|Ramdisk files (*.dmg)|*.dmg|All files (*.*)|*.*",
+                    Title = "Select IPSW or Ramdisk for SSH Ramdisk"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string sshrdPath = Path.Combine(baseDirectory, "tools", "sshrd.bat");
+                    
+                    // Determine command based on file type
+                    bool isIpswFile = openFileDialog.FileName.EndsWith(".ipsw", StringComparison.OrdinalIgnoreCase);
+                    string command = isIpswFile 
+                        ? $"create \"{openFileDialog.FileName}\"" 
+                        : $"boot \"{openFileDialog.FileName}\"";
+
+                    ToolOutput = "Starting SSH Ramdisk process...\n";
+                    ToolOutput += isIpswFile 
+                        ? "Creating SSH ramdisk from IPSW...\n" 
+                        : "Booting SSH ramdisk...\n";
+
+                    await _deviceService.RunExternalTool(sshrdPath, command, (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void AutoRamdiskBatch()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "IPSW files (*.ipsw)|*.ipsw|All files (*.*)|*.*",
+                    Title = "Select IPSW for Auto Ramdisk Creation"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string autoRamdiskPath = Path.Combine(baseDirectory, "tools", "auto_ramdisk.bat");
+                    ToolOutput = "Starting Auto Ramdisk Creator...\n";
+                    ToolOutput += "This will extract, create, and patch ramdisk from IPSW\n";
+                    ToolOutput += "Removes Setup.app for iCloud bypass\n\n";
+
+                    await _deviceService.RunExternalTool(autoRamdiskPath, $"\"{openFileDialog.FileName}\"", (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
         }
     }
 

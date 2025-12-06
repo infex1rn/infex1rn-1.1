@@ -282,6 +282,176 @@ echo '[*] Run: reboot'
                 .Select(Path.GetFileName)
                 .ToArray();
         }
+
+        /// <summary>
+        /// Automatically prepares all required bypass files when a ramdisk is loaded
+        /// </summary>
+        public async Task<BypassPreparationResult> AutoPrepareBypassFiles(Action<string> progressCallback = null)
+        {
+            var result = new BypassPreparationResult();
+
+            try
+            {
+                progressCallback?.Invoke("=== Auto-Preparing Bypass Files ===\n");
+
+                // Step 1: Check for gaster.exe in tools and copy to ramdisks
+                progressCallback?.Invoke("[1/5] Checking for gaster.exe...");
+                string gasterSource = Path.Combine(_toolsPath, "gaster", "gaster.exe");
+                string gasterDest = Path.Combine(_ramdisksPath, "gaster.exe");
+                
+                if (File.Exists(gasterSource))
+                {
+                    // Ensure ramdisks directory exists before copying
+                    Directory.CreateDirectory(_ramdisksPath);
+                    File.Copy(gasterSource, gasterDest, true);
+                    result.GasterReady = true;
+                    progressCallback?.Invoke("  ✓ gaster.exe copied to ramdisks folder");
+                }
+                else
+                {
+                    progressCallback?.Invoke("  ✗ gaster.exe not found in tools/gaster/");
+                    result.MissingFiles.Add("gaster.exe");
+                }
+
+                // Step 2: Check for iBSS*.im4p (bootchain stage 1)
+                progressCallback?.Invoke("\n[2/5] Checking for iBSS*.im4p (bootchain stage 1)...");
+                if (Directory.Exists(_ramdisksPath))
+                {
+                    var ibssFiles = Directory.GetFiles(_ramdisksPath, "iBSS*.im4p");
+                    if (ibssFiles.Length > 0)
+                    {
+                        result.IBSSReady = true;
+                        result.IBSSFile = Path.GetFileName(ibssFiles[0]);
+                        progressCallback?.Invoke($"  ✓ Found: {result.IBSSFile}");
+                    }
+                    else
+                    {
+                        progressCallback?.Invoke("  ✗ iBSS*.im4p not found");
+                        progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                        result.MissingFiles.Add("iBSS*.im4p");
+                    }
+                }
+                else
+                {
+                    progressCallback?.Invoke("  ✗ iBSS*.im4p not found (ramdisks directory doesn't exist)");
+                    progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                    result.MissingFiles.Add("iBSS*.im4p");
+                }
+
+                // Step 3: Check for iBEC*.im4p (bootchain stage 2)
+                progressCallback?.Invoke("\n[3/5] Checking for iBEC*.im4p (bootchain stage 2)...");
+                if (Directory.Exists(_ramdisksPath))
+                {
+                    var ibecFiles = Directory.GetFiles(_ramdisksPath, "iBEC*.im4p");
+                    if (ibecFiles.Length > 0)
+                    {
+                        result.IBECReady = true;
+                        result.IBECFile = Path.GetFileName(ibecFiles[0]);
+                        progressCallback?.Invoke($"  ✓ Found: {result.IBECFile}");
+                    }
+                    else
+                    {
+                        progressCallback?.Invoke("  ✗ iBEC*.im4p not found");
+                        progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                        result.MissingFiles.Add("iBEC*.im4p");
+                    }
+                }
+                else
+                {
+                    progressCallback?.Invoke("  ✗ iBEC*.im4p not found (ramdisks directory doesn't exist)");
+                    progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                    result.MissingFiles.Add("iBEC*.im4p");
+                }
+
+                // Step 4: Check for ramdisk.dmg
+                progressCallback?.Invoke("\n[4/5] Checking for ramdisk.dmg...");
+                string ramdiskPath = Path.Combine(_ramdisksPath, "ramdisk.dmg");
+                if (File.Exists(ramdiskPath))
+                {
+                    result.RamdiskReady = true;
+                    progressCallback?.Invoke("  ✓ ramdisk.dmg found");
+                }
+                else
+                {
+                    progressCallback?.Invoke("  ✗ ramdisk.dmg not found");
+                    progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                    result.MissingFiles.Add("ramdisk.dmg");
+                }
+
+                // Step 5: Check/Create patch_setup_app.sh
+                progressCallback?.Invoke("\n[5/5] Checking for patch_setup_app.sh...");
+                string patchScriptPath = Path.Combine(_ramdisksPath, "patch_setup_app.sh");
+                if (!File.Exists(patchScriptPath))
+                {
+                    progressCallback?.Invoke("  Creating patch_setup_app.sh...");
+                    await CreateSetupAppPatchScript();
+                    result.PatchScriptReady = true;
+                    progressCallback?.Invoke("  ✓ patch_setup_app.sh created");
+                }
+                else
+                {
+                    result.PatchScriptReady = true;
+                    progressCallback?.Invoke("  ✓ patch_setup_app.sh already exists");
+                }
+
+                // Summary
+                progressCallback?.Invoke("\n=== Preparation Summary ===");
+                result.AllFilesReady = (result.GasterReady && result.IBSSReady && 
+                                        result.IBECReady && result.RamdiskReady && 
+                                        result.PatchScriptReady);
+
+                if (result.AllFilesReady)
+                {
+                    progressCallback?.Invoke("\n✅ ALL FILES READY FOR BYPASS!");
+                    progressCallback?.Invoke("\nFiles in ramdisks folder:");
+                    progressCallback?.Invoke($"  • gaster.exe (boot pwned DFU)");
+                    progressCallback?.Invoke($"  • {result.IBSSFile} (bootchain stage 1)");
+                    progressCallback?.Invoke($"  • {result.IBECFile} (bootchain stage 2)");
+                    progressCallback?.Invoke($"  • ramdisk.dmg (actual ramdisk)");
+                    progressCallback?.Invoke($"  • patch_setup_app.sh (patch bypass)");
+                    progressCallback?.Invoke("\nNext steps:");
+                    progressCallback?.Invoke("  1. Put device in DFU mode");
+                    progressCallback?.Invoke("  2. Run 'Untethered Bypass' from System Utilities");
+                    progressCallback?.Invoke("  3. Or use the bypass batch scripts in tools/");
+                }
+                else
+                {
+                    progressCallback?.Invoke("\n⚠️  MISSING FILES - Cannot proceed with bypass");
+                    progressCallback?.Invoke("\nMissing files:");
+                    foreach (var file in result.MissingFiles)
+                    {
+                        progressCallback?.Invoke($"  • {file}");
+                    }
+                    progressCallback?.Invoke("\nTo get missing files:");
+                    progressCallback?.Invoke("  Go to System Utilities → 'Auto Extract Ramdisk'");
+                    progressCallback?.Invoke("  Select your device's IPSW file");
+                }
+
+                result.Success = true;
+            }
+            catch (Exception ex)
+            {
+                result.Error = ex.Message;
+                progressCallback?.Invoke($"\n❌ Error: {ex.Message}");
+            }
+
+            return result;
+        }
+    }
+
+    public class BypassPreparationResult
+    {
+        public bool Success { get; set; }
+        public bool AllFilesReady { get; set; }
+        public bool GasterReady { get; set; }
+        public bool IBSSReady { get; set; }
+        public bool IBECReady { get; set; }
+        public bool RamdiskReady { get; set; }
+        public bool PatchScriptReady { get; set; }
+        public string IBSSFile { get; set; }
+        public string IBECFile { get; set; }
+        public System.Collections.Generic.List<string> MissingFiles { get; set; } = new();
+        public string Error { get; set; }
     }
 
     public class RamdiskExtractionResult
