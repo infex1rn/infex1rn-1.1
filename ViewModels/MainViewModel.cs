@@ -347,13 +347,7 @@ namespace infex1rn.ViewModels
 
                 // Automatically prepare all bypass files
                 ToolOutput = ""; // Clear previous output
-                var result = await _ramdiskService.AutoPrepareBypassFiles((message) =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        ToolOutput += message + "\n";
-                    });
-                });
+                var result = await _ramdiskService.AutoPrepareBypassFiles(AppendToToolOutput);
 
                 if (result.AllFilesReady)
                 {
@@ -434,13 +428,7 @@ namespace infex1rn.ViewModels
         private async void AutoPrepareBypass()
         {
             ToolOutput = ""; // Clear previous output
-            var result = await _ramdiskService.AutoPrepareBypassFiles((message) =>
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    ToolOutput += message + "\n";
-                });
-            });
+            var result = await _ramdiskService.AutoPrepareBypassFiles(AppendToToolOutput);
 
             if (result.AllFilesReady)
             {
@@ -474,6 +462,17 @@ namespace infex1rn.ViewModels
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
             }
+        }
+
+        /// <summary>
+        /// Helper method to append messages to ToolOutput on UI thread
+        /// </summary>
+        private void AppendToToolOutput(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ToolOutput += message + "\n";
+            });
         }
 
         private async void EnterPwnDfu()

@@ -376,9 +376,9 @@ echo '[*] Run: reboot'
 
                 // Summary
                 progressCallback?.Invoke("\n=== Preparation Summary ===");
-                result.AllFilesReady = result.GasterReady && result.IBSSReady && 
-                                       result.IBECReady && result.RamdiskReady && 
-                                       result.PatchScriptReady;
+                result.AllFilesReady = (result.GasterReady && result.IBSSReady && 
+                                        result.IBECReady && result.RamdiskReady && 
+                                        result.PatchScriptReady);
 
                 if (result.AllFilesReady)
                 {
