@@ -136,6 +136,7 @@ namespace infex1rn.ViewModels
         public ICommand SaveRamdiskCommand { get; }
         public ICommand RamdiskExploitCommand { get; }
         public ICommand A10HelloBypassCommand { get; }
+        public ICommand UnthetheredBypassCommand { get; }
 
         public MainViewModel()
         {
@@ -168,6 +169,7 @@ namespace infex1rn.ViewModels
             BypassActivationLockCommand = new RelayCommand(BypassActivationLock);
             RamdiskExploitCommand = new RelayCommand(RamdiskExploit);
             A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
+            UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
         }
 
         private async void BypassActivationLock()
@@ -227,6 +229,30 @@ namespace infex1rn.ViewModels
                 ToolOutput = "Starting A10 Hello Bypass with Signals...\n";
                 ToolOutput += "Make sure your iPhone 7/7+ is in DFU mode.\n\n";
                 await _deviceService.RunExternalTool(a10BypassPath, "", (output) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ToolOutput += output + Environment.NewLine;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void UnthetheredBypass()
+        {
+            ToolOutput = "";
+            try
+            {
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string untetheredPath = Path.Combine(baseDirectory, "tools", "untethered_bypass.bat");
+                ToolOutput = "Starting Untethered iCloud Bypass...\n";
+                ToolOutput += "Supported: A7-A11 devices (iPhone 5s - iPhone X)\n";
+                ToolOutput += "Make sure your device is in DFU mode.\n\n";
+                await _deviceService.RunExternalTool(untetheredPath, "hello", (output) =>
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {

@@ -16,6 +16,19 @@ SSH ramdisks (also called forensics ramdisks) are minimal system images that boo
 - `.img4` - IMG4 format files (for 64-bit devices)
 - Custom ramdisk packages
 
+## Required Files for Untethered Bypass
+
+For untethered bypass, you need the following device-specific files:
+
+| File | Description |
+|------|-------------|
+| `ibss.img4` | iBSS bootloader (first stage) |
+| `ibec.img4` | iBEC bootloader (second stage) |
+| `ramdisk.dmg` | SSH ramdisk with bypass scripts |
+| `devicetree.img4` | Device tree for your device |
+| `trustcache.img4` | Trust cache for code signing |
+| `kernelcache.img4` | Patched kernel (optional) |
+
 ## Where to Get Ramdisks
 
 ### Option 1: Create Your Own
@@ -37,15 +50,29 @@ Ramdisk-based exploits work on devices with checkm8 vulnerability:
 - iPad mini 2 to iPad mini 5
 - iPad Pro 1st and 2nd generation
 
+## Tethered vs Untethered Bypass
+
+| Type | Survives Reboot | Daily Use | Files Needed |
+|------|-----------------|-----------|--------------|
+| Tethered | ❌ No | Limited | ramdisk.dmg only |
+| Untethered | ✅ Yes | Full | All boot files |
+
 ## Usage
 
+### Tethered Bypass
 1. Place your ramdisk file in this directory
-2. Use the "Load Ramdisk" feature in infex1rn
+2. Use the "Ramdisk Exploit (checkm8)" feature in infex1rn
 3. Follow the on-screen instructions
+
+### Untethered Bypass
+1. Place all required boot files in this directory
+2. Use the "Untethered Bypass" feature in infex1rn
+3. The bypass will persist after device reboots
 
 ## Important Notes
 
 - Ramdisk bypasses are typically "tethered" - must be re-applied after reboot
+- Untethered bypasses require additional boot files but persist after reboot
 - Cellular functions may be disabled after bypass
 - Use only for devices you own or have authorization to access
 - Educational and research purposes only
