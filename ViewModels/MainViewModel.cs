@@ -1044,12 +1044,13 @@ namespace infex1rn.ViewModels
                     string sshrdPath = Path.Combine(baseDirectory, "tools", "sshrd.bat");
                     
                     // Determine command based on file type
-                    string command = openFileDialog.FileName.EndsWith(".ipsw", StringComparison.OrdinalIgnoreCase) 
+                    bool isIpswFile = openFileDialog.FileName.EndsWith(".ipsw", StringComparison.OrdinalIgnoreCase);
+                    string command = isIpswFile 
                         ? $"create \"{openFileDialog.FileName}\"" 
                         : $"boot \"{openFileDialog.FileName}\"";
 
                     ToolOutput = "Starting SSH Ramdisk process...\n";
-                    ToolOutput += openFileDialog.FileName.EndsWith(".ipsw") 
+                    ToolOutput += isIpswFile 
                         ? "Creating SSH ramdisk from IPSW...\n" 
                         : "Booting SSH ramdisk...\n";
 
