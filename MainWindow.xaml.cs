@@ -19,14 +19,9 @@ namespace infex1rn
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files != null && files.Length > 0 && files[0].EndsWith(".ipsw", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    e.Effects = DragDropEffects.Copy;
-                }
-                else
-                {
-                    e.Effects = DragDropEffects.None;
-                }
+                e.Effects = (files != null && files.Length > 0 && files[0].EndsWith(".ipsw", System.StringComparison.OrdinalIgnoreCase))
+                    ? DragDropEffects.Copy
+                    : DragDropEffects.None;
             }
             else
             {

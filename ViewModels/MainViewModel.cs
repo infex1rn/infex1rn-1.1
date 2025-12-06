@@ -841,17 +841,24 @@ namespace infex1rn.ViewModels
 
         private void ExtractIpsw()
         {
-            if (SelectedIpswItem == null) return;
-            string entryPath = (string)SelectedIpswItem.Tag;
-            
-            string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
-            if (!Directory.Exists(extractPath))
+            try
             {
-                Directory.CreateDirectory(extractPath);
+                if (SelectedIpswItem == null) return;
+                string entryPath = (string)SelectedIpswItem.Tag;
+                
+                string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
+                if (!Directory.Exists(extractPath))
+                {
+                    Directory.CreateDirectory(extractPath);
+                }
+                
+                _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, extractPath);
+                MessageBox.Show($"Extraction complete.\n\nLocation: {extractPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            
-            _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, extractPath);
-            MessageBox.Show($"Extraction complete.\n\nLocation: {extractPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to extract file.\n\nError: {ex.Message}", "Extraction Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ExtractRamdisk()
@@ -961,60 +968,27 @@ namespace infex1rn.ViewModels
             ToolOutput = "";
             try
             {
-                // Prompt user for device identifier
-                var inputDialog = new Window
-                {
-                    Title = "Download IPSW",
-                    Width = 400,
-                    Height = 200,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
-                };
+                // Use MessageBox for simple input to avoid creating UI in ViewModel
+                var result = MessageBox.Show(
+                    "This will open your browser to download IPSW files.\n\n" +
+                    "Common Device Identifiers:\n" +
+                    "  iPhone 5s: iPhone6,1 / iPhone6,2\n" +
+                    "  iPhone 7: iPhone9,1 / iPhone9,3\n" +
+                    "  iPhone 8: iPhone10,1 / iPhone10,4\n" +
+                    "  iPhone X: iPhone10,3 / iPhone10,6\n\n" +
+                    "Note: You'll need to manually enter the device ID in the browser.\n" +
+                    "Proceed to open ipsw.me?",
+                    "Download IPSW",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
 
-                var grid = new Grid();
-                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
-                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
-                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
-
-                var label = new TextBlock
-                {
-                    Text = "Enter device identifier (e.g., iPhone9,1 for iPhone 7):",
-                    Foreground = Brushes.White,
-                    Margin = new Thickness(10),
-                    TextWrapping = System.Windows.TextWrapping.Wrap
-                };
-                Grid.SetRow(label, 0);
-                grid.Children.Add(label);
-
-                var textBox = new TextBox
-                {
-                    Margin = new Thickness(10),
-                    Padding = new Thickness(5),
-                    Text = ""
-                };
-                Grid.SetRow(textBox, 1);
-                grid.Children.Add(textBox);
-
-                var button = new Button
-                {
-                    Content = "Download",
-                    Margin = new Thickness(10),
-                    Padding = new Thickness(10, 5, 10, 5)
-                };
-                Grid.SetRow(button, 2);
-                grid.Children.Add(button);
-
-                button.Click += (s, e) => inputDialog.Close();
-                inputDialog.Content = grid;
-                inputDialog.ShowDialog();
-
-                string deviceId = textBox.Text.Trim();
-                if (!string.IsNullOrEmpty(deviceId))
+                if (result == MessageBoxResult.Yes)
                 {
                     string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                     string downloadPath = Path.Combine(baseDirectory, "tools", "download_ipsw.bat");
-                    ToolOutput = $"Opening IPSW download page for {deviceId}...\n";
-                    await _deviceService.RunExternalTool(downloadPath, deviceId, (output) =>
+                    ToolOutput = "Opening IPSW download page...\n";
+                    ToolOutput += "Navigate to your device model to download firmware.\n\n";
+                    await _deviceService.RunExternalTool(downloadPath, "", (output) =>
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {

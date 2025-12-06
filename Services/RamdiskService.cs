@@ -301,6 +301,8 @@ echo '[*] Run: reboot'
                 
                 if (File.Exists(gasterSource))
                 {
+                    // Ensure ramdisks directory exists before copying
+                    Directory.CreateDirectory(_ramdisksPath);
                     File.Copy(gasterSource, gasterDest, true);
                     result.GasterReady = true;
                     progressCallback?.Invoke("  ✓ gaster.exe copied to ramdisks folder");
@@ -313,32 +315,50 @@ echo '[*] Run: reboot'
 
                 // Step 2: Check for iBSS*.im4p (bootchain stage 1)
                 progressCallback?.Invoke("\n[2/5] Checking for iBSS*.im4p (bootchain stage 1)...");
-                var ibssFiles = Directory.GetFiles(_ramdisksPath, "iBSS*.im4p");
-                if (ibssFiles.Length > 0)
+                if (Directory.Exists(_ramdisksPath))
                 {
-                    result.IBSSReady = true;
-                    result.IBSSFile = Path.GetFileName(ibssFiles[0]);
-                    progressCallback?.Invoke($"  ✓ Found: {result.IBSSFile}");
+                    var ibssFiles = Directory.GetFiles(_ramdisksPath, "iBSS*.im4p");
+                    if (ibssFiles.Length > 0)
+                    {
+                        result.IBSSReady = true;
+                        result.IBSSFile = Path.GetFileName(ibssFiles[0]);
+                        progressCallback?.Invoke($"  ✓ Found: {result.IBSSFile}");
+                    }
+                    else
+                    {
+                        progressCallback?.Invoke("  ✗ iBSS*.im4p not found");
+                        progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                        result.MissingFiles.Add("iBSS*.im4p");
+                    }
                 }
                 else
                 {
-                    progressCallback?.Invoke("  ✗ iBSS*.im4p not found");
+                    progressCallback?.Invoke("  ✗ iBSS*.im4p not found (ramdisks directory doesn't exist)");
                     progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
                     result.MissingFiles.Add("iBSS*.im4p");
                 }
 
                 // Step 3: Check for iBEC*.im4p (bootchain stage 2)
                 progressCallback?.Invoke("\n[3/5] Checking for iBEC*.im4p (bootchain stage 2)...");
-                var ibecFiles = Directory.GetFiles(_ramdisksPath, "iBEC*.im4p");
-                if (ibecFiles.Length > 0)
+                if (Directory.Exists(_ramdisksPath))
                 {
-                    result.IBECReady = true;
-                    result.IBECFile = Path.GetFileName(ibecFiles[0]);
-                    progressCallback?.Invoke($"  ✓ Found: {result.IBECFile}");
+                    var ibecFiles = Directory.GetFiles(_ramdisksPath, "iBEC*.im4p");
+                    if (ibecFiles.Length > 0)
+                    {
+                        result.IBECReady = true;
+                        result.IBECFile = Path.GetFileName(ibecFiles[0]);
+                        progressCallback?.Invoke($"  ✓ Found: {result.IBECFile}");
+                    }
+                    else
+                    {
+                        progressCallback?.Invoke("  ✗ iBEC*.im4p not found");
+                        progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
+                        result.MissingFiles.Add("iBEC*.im4p");
+                    }
                 }
                 else
                 {
-                    progressCallback?.Invoke("  ✗ iBEC*.im4p not found");
+                    progressCallback?.Invoke("  ✗ iBEC*.im4p not found (ramdisks directory doesn't exist)");
                     progressCallback?.Invoke("    Extract from IPSW using 'Auto Extract Ramdisk' in System Utilities");
                     result.MissingFiles.Add("iBEC*.im4p");
                 }
