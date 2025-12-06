@@ -240,23 +240,40 @@
                     </Grid.RowDefinitions>
                     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="300">
                         <StackPanel>
+                            <TextBlock Text="Device Control" FontSize="12" FontWeight="Bold" 
+                                       Foreground="#FF888888" Margin="15,15,15,5" />
                             <Button Content="🔄 Load Ramdisk" Command="{Binding LoadRamdiskCommand}" 
-                                    Margin="15,15,15,5" Style="{StaticResource ModernButton}" />
+                                    Margin="15,5,15,5" Style="{StaticResource ModernButton}" />
                             <Button Content="⚡ Enter PwnDFU" Command="{Binding EnterPwnDfuCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource ModernButton}" />
                             <Button Content="🟣 Enter Purple Mode" Command="{Binding EnterPurpleModeCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource ModernButton}" />
+                            
+                            <TextBlock Text="Bypass Tools" FontSize="12" FontWeight="Bold" 
+                                       Foreground="#FF888888" Margin="15,10,15,5" />
                             <Button Content="🔓 Bypass Activation Lock" Command="{Binding BypassActivationLockCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
                             <Button Content="💾 Ramdisk Exploit (checkm8)" Command="{Binding RamdiskExploitCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
                             <Button Content="📱 A10 Hello Bypass (Signals)" Command="{Binding A10HelloBypassCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
+                            <Button Content="✅ Untethered Bypass" Command="{Binding UnthetheredBypassCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource SuccessButton}" />
+                            
+                            <TextBlock Text="Advanced Tools" FontSize="12" FontWeight="Bold" 
+                                       Foreground="#FF888888" Margin="15,10,15,5" />
                             <Button Content="🎯 Auto Extract Ramdisk (from IPSW)" Command="{Binding AutoExtractRamdiskCommand}" 
                                     Margin="15,5,15,5" Style="{StaticResource PrimaryButton}"
                                     ToolTip="Automatically extract and patch ramdisk from IPSW to remove Setup.app" />
-                            <Button Content="✅ Untethered Bypass" Command="{Binding UnthetheredBypassCommand}" 
-                                    Margin="15,5,15,10" Style="{StaticResource SuccessButton}" />
+                            <Button Content="🔧 Auto Ramdisk Creator (Batch)" Command="{Binding AutoRamdiskBatchCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}"
+                                    ToolTip="Run auto_ramdisk.bat - Extract, create, and patch ramdisk from IPSW" />
+                            <Button Content="🔑 SSH Ramdisk Tools" Command="{Binding SshRamdiskCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}"
+                                    ToolTip="Create or boot SSH ramdisk for advanced device access" />
+                            <Button Content="📥 Download IPSW" Command="{Binding DownloadIpswCommand}" 
+                                    Margin="15,5,15,10" Style="{StaticResource ModernButton}"
+                                    ToolTip="Open IPSW download page for your device" />
                         </StackPanel>
                     </ScrollViewer>
                     <TextBox Grid.Row="1" Text="{Binding ToolOutput}" IsReadOnly="True" 

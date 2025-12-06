@@ -141,6 +141,9 @@ namespace infex1rn.ViewModels
         public ICommand UnthetheredBypassCommand { get; }
         public ICommand AutoExtractRamdiskCommand { get; }
         public ICommand AutoPrepareBypassCommand { get; }
+        public ICommand DownloadIpswCommand { get; }
+        public ICommand SshRamdiskCommand { get; }
+        public ICommand AutoRamdiskBatchCommand { get; }
 
         public MainViewModel()
         {
@@ -176,6 +179,9 @@ namespace infex1rn.ViewModels
             UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
             AutoExtractRamdiskCommand = new RelayCommand(AutoExtractRamdisk);
             AutoPrepareBypassCommand = new RelayCommand(AutoPrepareBypass);
+            DownloadIpswCommand = new RelayCommand(DownloadIpsw);
+            SshRamdiskCommand = new RelayCommand(SshRamdisk);
+            AutoRamdiskBatchCommand = new RelayCommand(AutoRamdiskBatch);
         }
 
         private async void AutoExtractRamdisk()
@@ -946,6 +952,154 @@ namespace infex1rn.ViewModels
         private bool CanExtractRamdisk()
         {
             return IsRamdiskPresent;
+        }
+
+        private async void DownloadIpsw()
+        {
+            ToolOutput = "";
+            try
+            {
+                // Prompt user for device identifier
+                var inputDialog = new Window
+                {
+                    Title = "Download IPSW",
+                    Width = 400,
+                    Height = 200,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30))
+                };
+
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var label = new TextBlock
+                {
+                    Text = "Enter device identifier (e.g., iPhone9,1 for iPhone 7):",
+                    Foreground = System.Windows.Media.Brushes.White,
+                    Margin = new Thickness(10),
+                    TextWrapping = TextWrapping.Wrap
+                };
+                Grid.SetRow(label, 0);
+                grid.Children.Add(label);
+
+                var textBox = new TextBox
+                {
+                    Margin = new Thickness(10),
+                    Padding = new Thickness(5),
+                    Text = ""
+                };
+                Grid.SetRow(textBox, 1);
+                grid.Children.Add(textBox);
+
+                var button = new Button
+                {
+                    Content = "Download",
+                    Margin = new Thickness(10),
+                    Padding = new Thickness(10, 5, 10, 5)
+                };
+                Grid.SetRow(button, 2);
+                grid.Children.Add(button);
+
+                button.Click += (s, e) => inputDialog.Close();
+                inputDialog.Content = grid;
+                inputDialog.ShowDialog();
+
+                string deviceId = textBox.Text.Trim();
+                if (!string.IsNullOrEmpty(deviceId))
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string downloadPath = Path.Combine(baseDirectory, "tools", "download_ipsw.bat");
+                    ToolOutput = $"Opening IPSW download page for {deviceId}...\n";
+                    await _deviceService.RunExternalTool(downloadPath, deviceId, (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void SshRamdisk()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "IPSW files (*.ipsw)|*.ipsw|Ramdisk files (*.dmg)|*.dmg|All files (*.*)|*.*",
+                    Title = "Select IPSW or Ramdisk for SSH Ramdisk"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string sshrdPath = Path.Combine(baseDirectory, "tools", "sshrd.bat");
+                    
+                    // Determine command based on file type
+                    string command = openFileDialog.FileName.EndsWith(".ipsw", StringComparison.OrdinalIgnoreCase) 
+                        ? $"create \"{openFileDialog.FileName}\"" 
+                        : $"boot \"{openFileDialog.FileName}\"";
+
+                    ToolOutput = "Starting SSH Ramdisk process...\n";
+                    ToolOutput += openFileDialog.FileName.EndsWith(".ipsw") 
+                        ? "Creating SSH ramdisk from IPSW...\n" 
+                        : "Booting SSH ramdisk...\n";
+
+                    await _deviceService.RunExternalTool(sshrdPath, command, (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void AutoRamdiskBatch()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    Filter = "IPSW files (*.ipsw)|*.ipsw|All files (*.*)|*.*",
+                    Title = "Select IPSW for Auto Ramdisk Creation"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string autoRamdiskPath = Path.Combine(baseDirectory, "tools", "auto_ramdisk.bat");
+                    ToolOutput = "Starting Auto Ramdisk Creator...\n";
+                    ToolOutput += "This will extract, create, and patch ramdisk from IPSW\n";
+                    ToolOutput += "Removes Setup.app for iCloud bypass\n\n";
+
+                    await _deviceService.RunExternalTool(autoRamdiskPath, $"\"{openFileDialog.FileName}\"", (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
         }
     }
 
