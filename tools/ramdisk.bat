@@ -1,20 +1,14 @@
 @echo off
-REM Ramdisk exploit using checkm8 - First put device in pwned DFU mode, then load ramdisk
-echo [*] Starting ramdisk exploit using checkm8...
-echo [*] Step 1: Putting device in pwned DFU mode...
-gasterr\gaster.exe pwn
-if errorlevel 1 (
-    echo [!] Failed to put device in pwned DFU mode
-    exit /b 1
-)
-echo [*] Device is now in pwned DFU mode
-echo [*] Step 2: Loading ramdisk...
+REM Ramdisk loader - Load ramdisk on device in DFU mode
+echo [*] Starting ramdisk loader...
+echo [*] Note: Device must be in pwned DFU mode before running this script
+echo [*] Step 1: Loading ramdisk...
 libimobiledevice\irecovery.exe -f "%~1"
 if errorlevel 1 (
     echo [!] Failed to send ramdisk file
     exit /b 1
 )
-echo [*] Step 3: Executing ramdisk command...
+echo [*] Step 2: Executing ramdisk command...
 libimobiledevice\irecovery.exe -c ramdisk
 if errorlevel 1 (
     echo [!] Failed to execute ramdisk command
