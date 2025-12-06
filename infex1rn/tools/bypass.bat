@@ -1,2 +1,2 @@
 @echo off
-ideviceactivation.exe activate -s
+libimobiledevice\ideviceactivation.exe activate -s
