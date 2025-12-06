@@ -107,6 +107,7 @@ namespace infex1rn.Services
             var plist = LibiMobileDevice.Instance.Plist;
             var recovery = LibiMobileDevice.Instance.Recovery;
 
+            ulong ecid = 0;
             iDeviceHandle deviceHandle;
             idevice.idevice_new(out deviceHandle, udid).ThrowOnError();
             using(deviceHandle)
@@ -119,18 +120,17 @@ namespace infex1rn.Services
                     lockdown.lockdownd_get_value(lockdownHandle, null, "UniqueChipID", out ecidNode).ThrowOnError();
                     using(ecidNode)
                     {
-                        ulong ecid;
                         plist.plist_get_uint_val(ecidNode, out ecid);
-                        
-                        lockdown.lockdownd_enter_recovery(lockdownHandle).ThrowOnError();
                     }
+                    
+                    lockdown.lockdownd_enter_recovery(lockdownHandle).ThrowOnError();
                 }
             }
             
             System.Threading.Thread.Sleep(2000);
             
             RecoveryClientHandle recoveryHandle;
-            recovery.irecv_open_with_ecid(out recoveryHandle, 0).ThrowOnError();
+            recovery.irecv_open_with_ecid(out recoveryHandle, ecid).ThrowOnError();
             using(recoveryHandle)
             {
                 recovery.irecv_setenv(recoveryHandle, "auto-boot", "true").ThrowOnError();
@@ -141,10 +141,31 @@ namespace infex1rn.Services
 
         public void LoadRamdisk(string udid, string ramdiskPath)
         {
+            var idevice = LibiMobileDevice.Instance.iDevice;
+            var lockdown = LibiMobileDevice.Instance.Lockdown;
+            var plist = LibiMobileDevice.Instance.Plist;
             var recovery = LibiMobileDevice.Instance.Recovery;
 
+            ulong ecid = 0;
+            iDeviceHandle deviceHandle;
+            idevice.idevice_new(out deviceHandle, udid).ThrowOnError();
+            using(deviceHandle)
+            {
+                LockdownClientHandle lockdownHandle;
+                lockdown.lockdownd_client_new_with_handshake(deviceHandle, out lockdownHandle, "infex1rn").ThrowOnError();
+                using(lockdownHandle)
+                {
+                    PlistHandle ecidNode;
+                    lockdown.lockdownd_get_value(lockdownHandle, null, "UniqueChipID", out ecidNode).ThrowOnError();
+                    using(ecidNode)
+                    {
+                        plist.plist_get_uint_val(ecidNode, out ecid);
+                    }
+                }
+            }
+
             RecoveryClientHandle recoveryHandle;
-            recovery.irecv_open_with_ecid(out recoveryHandle, 0).ThrowOnError();
+            recovery.irecv_open_with_ecid(out recoveryHandle, ecid).ThrowOnError();
             using(recoveryHandle)
             {
                 recovery.irecv_send_file(recoveryHandle, ramdiskPath, 1).ThrowOnError();
