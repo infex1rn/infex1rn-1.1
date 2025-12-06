@@ -20,6 +20,8 @@ namespace infex1rn.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        private const string ExtractedFirmwareDirectory = "extracted_firmware";
+        
         private readonly DeviceService _deviceService;
         private readonly AppService _appService;
         private readonly FirmwareService _firmwareService;
@@ -643,13 +645,12 @@ namespace infex1rn.ViewModels
 
                 IsRamdiskPresent = false;
                 _ramdiskPath = null;
-                _currentIpswPath = ipswPath;
 
                 IpswTree.Clear();
-                var root = new TreeViewItem { Header = Path.GetFileName(_currentIpswPath), Tag = "" };
+                var root = new TreeViewItem { Header = Path.GetFileName(ipswPath), Tag = "" };
                 IpswTree.Add(root);
 
-                var entries = _firmwareService.GetIpswEntries(_currentIpswPath);
+                var entries = _firmwareService.GetIpswEntries(ipswPath);
                 var directories = new Dictionary<string, TreeViewItem> { { "", root } };
 
                 foreach (var entry in entries)
@@ -678,7 +679,7 @@ namespace infex1rn.ViewModels
                 // Try to find ramdisk in BuildManifest.plist
                 try
                 {
-                    using (ZipArchive archive = ZipFile.OpenRead(_currentIpswPath))
+                    using (ZipArchive archive = ZipFile.OpenRead(ipswPath))
                     {
                         var manifestEntry = archive.GetEntry("BuildManifest.plist");
                         if (manifestEntry != null)
@@ -694,7 +695,7 @@ namespace infex1rn.ViewModels
                                     using (parsedPlist)
                                     {
                                         var buildIdentities = plist.plist_dict_get_item(parsedPlist, "BuildIdentities");
-                                        if (!buildIdentities.IsInvalid)
+                                        if (!buildIdentities.IsInvalid && plist.plist_array_get_size(buildIdentities) > 0)
                                         {
                                             var firstIdentity = plist.plist_array_get_item(buildIdentities, 0);
                                             if (!firstIdentity.IsInvalid)
@@ -733,6 +734,8 @@ namespace infex1rn.ViewModels
                     MessageBox.Show($"Note: Could not extract ramdisk path from BuildManifest: {ex.Message}\nIPSW loaded successfully.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
 
+                // Only set the current path after successful loading
+                _currentIpswPath = ipswPath;
                 MessageBox.Show($"IPSW loaded successfully!\n{Path.GetFileName(_currentIpswPath)}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -749,8 +752,15 @@ namespace infex1rn.ViewModels
         {
             if (SelectedIpswItem == null) return;
             string entryPath = (string)SelectedIpswItem.Tag;
-            _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, "extracted_firmware");
-            MessageBox.Show("Extraction complete.");
+            
+            string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
+            if (!Directory.Exists(extractPath))
+            {
+                Directory.CreateDirectory(extractPath);
+            }
+            
+            _firmwareService.ExtractIpswEntry(_currentIpswPath, entryPath, extractPath);
+            MessageBox.Show($"Extraction complete.\n\nLocation: {extractPath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ExtractRamdisk()
@@ -770,7 +780,7 @@ namespace infex1rn.ViewModels
                 }
 
                 // Create extracted_firmware directory if it doesn't exist
-                string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "extracted_firmware");
+                string extractPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ExtractedFirmwareDirectory);
                 if (!Directory.Exists(extractPath))
                 {
                     Directory.CreateDirectory(extractPath);
