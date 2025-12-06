@@ -480,7 +480,7 @@ namespace infex1rn.ViewModels
 
                 // Parse the string array into a dictionary
                 var infoDict = new Dictionary<string, string>();
-                for (int i = 0; i < info.Count - 1; i += 2)
+                for (int i = 0; i + 1 < info.Count; i += 2)
                 {
                     infoDict[info[i]] = info[i + 1];
                 }
