@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using iMobileDevice;
 using iMobileDevice.Plist;
 using iMobileDevice.iDevice;
@@ -966,20 +968,20 @@ namespace infex1rn.ViewModels
                     Width = 400,
                     Height = 200,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30))
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
                 };
 
                 var grid = new Grid();
-                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
 
                 var label = new TextBlock
                 {
                     Text = "Enter device identifier (e.g., iPhone9,1 for iPhone 7):",
-                    Foreground = System.Windows.Media.Brushes.White,
+                    Foreground = Brushes.White,
                     Margin = new Thickness(10),
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = System.Windows.TextWrapping.Wrap
                 };
                 Grid.SetRow(label, 0);
                 grid.Children.Add(label);
