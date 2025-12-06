@@ -539,12 +539,11 @@ namespace infex1rn.ViewModels
                 houseArrest.house_arrest_client_start_service(deviceHandle, out houseArrestHandle, "infex1rn").ThrowOnError();
                 using (houseArrestHandle)
                 {
-                    houseArrest.house_arrest_send_command(houseArrestHandle, "VendContainer", SelectedFileSharingApp.Value).ThrowOnError();
-                    
                     AfcClientHandle afcHandle;
                     afc.afc_client_new_from_house_arrest_client(houseArrestHandle, out afcHandle).ThrowOnError();
                     using (afcHandle)
                     {
+                        houseArrest.house_arrest_send_command(houseArrestHandle, "VendContainer", SelectedFileSharingApp.Value).ThrowOnError();
                         PopulateAppFileTree(root, "/", afcHandle);
                     }
                 }
@@ -573,7 +572,12 @@ namespace infex1rn.ViewModels
 
                 // Parse the string array into a dictionary
                 var infoDict = new Dictionary<string, string>();
-                for (int i = 0; i + 1 < info.Count; i += 2)
+                if (info.Count % 2 != 0)
+                {
+                    // Log or handle the case where info.Count is not even
+                    // For now, we ignore the last element if odd
+                }
+                for (int i = 0; i < info.Count - 1; i += 2)
                 {
                     infoDict[info[i]] = info[i + 1];
                 }

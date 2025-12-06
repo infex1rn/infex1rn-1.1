@@ -15,6 +15,9 @@ namespace infex1rn.Services
 {
     public class DeviceService
     {
+        // Delay in milliseconds to wait for device to transition into recovery mode
+        private const int RECOVERY_MODE_TRANSITION_DELAY_MS = 2000;
+
         public ReadOnlyCollection<string> GetDeviceList()
         {
             var idevice = LibiMobileDevice.Instance.iDevice;
@@ -127,7 +130,7 @@ namespace infex1rn.Services
                 }
             }
             
-            System.Threading.Thread.Sleep(2000);
+            System.Threading.Thread.Sleep(RECOVERY_MODE_TRANSITION_DELAY_MS);
             
             RecoveryClientHandle recoveryHandle;
             recovery.irecv_open_with_ecid(out recoveryHandle, ecid).ThrowOnError();
