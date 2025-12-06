@@ -134,6 +134,7 @@ namespace infex1rn.ViewModels
         public ICommand AddFileToRamdiskCommand { get; }
         public ICommand RemoveFileFromRamdiskCommand { get; }
         public ICommand SaveRamdiskCommand { get; }
+        public ICommand RamdiskExploitCommand { get; }
 
         public MainViewModel()
         {
@@ -164,6 +165,7 @@ namespace infex1rn.ViewModels
             RemoveFileFromRamdiskCommand = new RelayCommand(RemoveFileFromRamdisk);
             SaveRamdiskCommand = new RelayCommand(SaveRamdisk);
             BypassActivationLockCommand = new RelayCommand(BypassActivationLock);
+            RamdiskExploitCommand = new RelayCommand(RamdiskExploit);
         }
 
         private async void BypassActivationLock()
@@ -180,6 +182,32 @@ namespace infex1rn.ViewModels
                         ToolOutput += output + Environment.NewLine;
                     });
                 });
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void RamdiskExploit()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog { Filter = "Ramdisk files (*.dmg)|*.dmg|All files (*.*)|*.*" };
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string ramdiskBatPath = Path.Combine(baseDirectory, "tools", "ramdisk.bat");
+                    ToolOutput = "Starting ramdisk exploit using checkm8...\n";
+                    await _deviceService.RunExternalTool(ramdiskBatPath, $"\"{openFileDialog.FileName}\"", (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
             }
             catch (Exception ex)
             {

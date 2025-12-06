@@ -83,6 +83,7 @@
                         <Button Content="Enter PwnDFU" Command="{Binding EnterPwnDfuCommand}" Margin="10" />
                         <Button Content="Enter Purple Mode" Command="{Binding EnterPurpleModeCommand}" Margin="10" />
                         <Button Content="Bypass Activation Lock" Command="{Binding BypassActivationLockCommand}" Margin="10" />
+                        <Button Content="Ramdisk Exploit (checkm8)" Command="{Binding RamdiskExploitCommand}" Margin="10" />
                     </StackPanel>
                     <TextBox Grid.Row="1" Text="{Binding ToolOutput}" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="10" />
                 </Grid>
