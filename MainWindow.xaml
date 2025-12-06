@@ -310,14 +310,18 @@
                     </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Button Content="📁 Load Ramdisk" Command="{Binding LoadRamdiskFileCommand}" 
                             Margin="15,15,15,10" Grid.Row="0" Style="{StaticResource PrimaryButton}" />
-                    <TreeView ItemsSource="{Binding RamdiskTree}" Margin="15,0,15,10" Grid.Row="1" 
+                    <Button Content="🔧 Auto-Prepare Bypass Files" Command="{Binding AutoPrepareBypassCommand}" 
+                            Margin="15,0,15,10" Grid.Row="1" Style="{StaticResource SuccessButton}"
+                            ToolTip="Automatically check and prepare all required files for bypass (gaster.exe, iBSS, iBEC, ramdisk.dmg, patch script)" />
+                    <TreeView ItemsSource="{Binding RamdiskTree}" Margin="15,0,15,10" Grid.Row="2" 
                               Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"/>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15,0,15,15">
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15,0,15,15">
                         <Button Content="➕ Add File" Command="{Binding AddFileToRamdiskCommand}" 
                                 Margin="0,0,10,0" Style="{StaticResource ModernButton}" />
                         <Button Content="➖ Remove File" Command="{Binding RemoveFileFromRamdiskCommand}" 

@@ -140,6 +140,7 @@ namespace infex1rn.ViewModels
         public ICommand A10HelloBypassCommand { get; }
         public ICommand UnthetheredBypassCommand { get; }
         public ICommand AutoExtractRamdiskCommand { get; }
+        public ICommand AutoPrepareBypassCommand { get; }
 
         public MainViewModel()
         {
@@ -174,6 +175,7 @@ namespace infex1rn.ViewModels
             A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
             UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
             AutoExtractRamdiskCommand = new RelayCommand(AutoExtractRamdisk);
+            AutoPrepareBypassCommand = new RelayCommand(AutoPrepareBypass);
         }
 
         private async void AutoExtractRamdisk()
@@ -342,6 +344,43 @@ namespace infex1rn.ViewModels
             {
                 _unpackedRamdiskPath = await _ramdiskService.UnpackRamdisk(openFileDialog.FileName);
                 PopulateRamdiskTree();
+
+                // Automatically prepare all bypass files
+                ToolOutput = ""; // Clear previous output
+                var result = await _ramdiskService.AutoPrepareBypassFiles((message) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ToolOutput += message + "\n";
+                    });
+                });
+
+                if (result.AllFilesReady)
+                {
+                    MessageBox.Show(
+                        "All bypass files are ready!\n\n" +
+                        "Files prepared:\n" +
+                        "  • gaster.exe\n" +
+                        $"  • {result.IBSSFile}\n" +
+                        $"  • {result.IBECFile}\n" +
+                        "  • ramdisk.dmg\n" +
+                        "  • patch_setup_app.sh\n\n" +
+                        "You can now run the bypass from System Utilities.",
+                        "Bypass Ready",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else if (result.MissingFiles.Count > 0)
+                {
+                    MessageBox.Show(
+                        $"Ramdisk loaded, but missing {result.MissingFiles.Count} required file(s) for bypass.\n\n" +
+                        "Missing:\n" +
+                        string.Join("\n", result.MissingFiles.Select(f => $"  • {f}")) + "\n\n" +
+                        "Use 'Auto Extract Ramdisk' in System Utilities to get missing files.",
+                        "Missing Files",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
         }
 
@@ -389,6 +428,51 @@ namespace infex1rn.ViewModels
             {
                 await _ramdiskService.RepackRamdisk(_unpackedRamdiskPath, saveFileDialog.FileName);
                 MessageBox.Show("Ramdisk saved successfully.");
+            }
+        }
+
+        private async void AutoPrepareBypass()
+        {
+            ToolOutput = ""; // Clear previous output
+            var result = await _ramdiskService.AutoPrepareBypassFiles((message) =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ToolOutput += message + "\n";
+                });
+            });
+
+            if (result.AllFilesReady)
+            {
+                MessageBox.Show(
+                    "All bypass files are ready!\n\n" +
+                    "Files prepared:\n" +
+                    "  • gaster.exe (boot pwned DFU)\n" +
+                    $"  • {result.IBSSFile} (bootchain stage 1)\n" +
+                    $"  • {result.IBECFile} (bootchain stage 2)\n" +
+                    "  • ramdisk.dmg (actual ramdisk)\n" +
+                    "  • patch_setup_app.sh (patch bypass)\n\n" +
+                    "Next steps:\n" +
+                    "  1. Put device in DFU mode\n" +
+                    "  2. Run 'Untethered Bypass' from System Utilities\n" +
+                    "  3. Or use bypass batch scripts in tools/",
+                    "Bypass Ready ✅",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else if (result.MissingFiles.Count > 0)
+            {
+                MessageBox.Show(
+                    $"Missing {result.MissingFiles.Count} required file(s) for bypass.\n\n" +
+                    "Missing:\n" +
+                    string.Join("\n", result.MissingFiles.Select(f => $"  • {f}")) + "\n\n" +
+                    "To get missing files:\n" +
+                    "  Go to System Utilities → 'Auto Extract Ramdisk'\n" +
+                    "  Select your device's IPSW file\n\n" +
+                    "Check System Utilities tab for detailed output.",
+                    "Missing Files ⚠️",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
 
