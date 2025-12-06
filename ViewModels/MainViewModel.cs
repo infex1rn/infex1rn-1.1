@@ -473,46 +473,43 @@ namespace infex1rn.ViewModels
                 lockdown.lockdownd_client_new_with_handshake(deviceHandle, out lockdownHandle, "infex1rn").ThrowOnError();
                 using (lockdownHandle)
                 {
-                    LockdownServiceDescriptorHandle service;
-                    installationProxy.instproxy_client_start_service(lockdownHandle, out service, "infex1rn").ThrowOnError();
-                    using (service)
+                    InstallationProxyClientHandle client;
+                    installationProxy.instproxy_client_start_service(deviceHandle, out client, "infex1rn").ThrowOnError();
+                    using (client)
                     {
-                        InstallationProxyClientHandle client;
-                        installationProxy.instproxy_client_new(deviceHandle, service, out client).ThrowOnError();
-                        using (client)
+                        PlistHandle options = plist.plist_new_dict();
+                        using(options)
                         {
-                            PlistHandle options = plist.plist_new_dict();
-                            using(options)
-                            {
-                                plist.plist_dict_set_item(options, "ReturnAttributes", plist.plist_new_array());
-                                PlistHandle returnAttributes = plist.plist_dict_get_item(options, "ReturnAttributes");
-                                plist.plist_array_append_item(returnAttributes, plist.plist_new_string("CFBundleDisplayName"));
-                                plist.plist_array_append_item(returnAttributes, plist.plist_new_string("CFBundleIdentifier"));
-                                plist.plist_array_append_item(returnAttributes, plist.plist_new_string("UIFileSharingEnabled"));
+                            plist.plist_dict_set_item(options, "ReturnAttributes", plist.plist_new_array());
+                            PlistHandle returnAttributes = plist.plist_dict_get_item(options, "ReturnAttributes");
+                            plist.plist_array_append_item(returnAttributes, plist.plist_new_string("CFBundleDisplayName"));
+                            plist.plist_array_append_item(returnAttributes, plist.plist_new_string("CFBundleIdentifier"));
+                            plist.plist_array_append_item(returnAttributes, plist.plist_new_string("UIFileSharingEnabled"));
 
-                                PlistHandle appNodes;
-                                installationProxy.instproxy_browse(client, options, out appNodes).ThrowOnError();
-                                using (appNodes)
+                            PlistHandle appNodes;
+                            installationProxy.instproxy_browse(client, options, out appNodes).ThrowOnError();
+                            using (appNodes)
+                            {
+                                for (uint i = 0; i < plist.plist_array_get_size(appNodes); i++)
                                 {
-                                    for (uint i = 0; i < plist.plist_array_get_size(appNodes); i++)
+                                    PlistHandle appNode = plist.plist_array_get_item(appNodes, i);
+                                    PlistHandle fileSharingNode = plist.plist_dict_get_item(appNode, "UIFileSharingEnabled");
+                                    if (!fileSharingNode.IsInvalid)
                                     {
-                                        PlistHandle appNode = plist.plist_array_get_item(appNodes, i);
-                                        PlistHandle fileSharingNode = plist.plist_dict_get_item(appNode, "UIFileSharingEnabled");
-                                        if (fileSharingNode.IsNotNull)
+                                        bool fileSharingEnabled = false;
+                                        char boolVal = '\0';
+                                        plist.plist_get_bool_val(fileSharingNode, ref boolVal);
+                                        fileSharingEnabled = boolVal != '\0';
+                                        if (fileSharingEnabled)
                                         {
-                                            bool fileSharingEnabled;
-                                            plist.plist_get_bool_val(fileSharingNode, out fileSharingEnabled);
-                                            if (fileSharingEnabled)
+                                            PlistHandle appNameNode = plist.plist_dict_get_item(appNode, "CFBundleDisplayName");
+                                            PlistHandle bundleIdNode = plist.plist_dict_get_item(appNode, "CFBundleIdentifier");
+                                            if (!appNameNode.IsInvalid && !bundleIdNode.IsInvalid)
                                             {
-                                                PlistHandle appNameNode = plist.plist_dict_get_item(appNode, "CFBundleDisplayName");
-                                                PlistHandle bundleIdNode = plist.plist_dict_get_item(appNode, "CFBundleIdentifier");
-                                                if (appNameNode.IsNotNull && bundleIdNode.IsNotNull)
-                                                {
-                                                    string appName, bundleId;
-                                                    plist.plist_get_string_val(appNameNode, out appName);
-                                                    plist.plist_get_string_val(bundleIdNode, out bundleId);
-                                                    FileSharingApps.Add(new KeyValuePair<string, string>(appName, bundleId));
-                                                }
+                                                string appName, bundleId;
+                                                plist.plist_get_string_val(appNameNode, out appName);
+                                                plist.plist_get_string_val(bundleIdNode, out bundleId);
+                                                FileSharingApps.Add(new KeyValuePair<string, string>(appName, bundleId));
                                             }
                                         }
                                     }
@@ -545,7 +542,7 @@ namespace infex1rn.ViewModels
                 using (houseArrestHandle)
                 {
                     AfcClientHandle afcHandle;
-                    houseArrest.house_arrest_get_afc_client(houseArrestHandle, out afcHandle).ThrowOnError();
+                    houseArrest.afc_client_new_from_house_arrest_client(houseArrestHandle, out afcHandle).ThrowOnError();
                     using (afcHandle)
                     {
                         houseArrest.house_arrest_send_command(houseArrestHandle, "VendContainer", SelectedFileSharingApp.Value).ThrowOnError();
@@ -572,10 +569,22 @@ namespace infex1rn.ViewModels
                 var node = new TreeViewItem { Header = entry };
                 parent.Items.Add(node);
 
-                IReadOnlyDictionary<string, string> info;
+                ReadOnlyCollection<string> info;
                 afc.afc_get_file_info(afcHandle, fullPath, out info).ThrowOnError();
 
-                if (info["st_ifmt"] == "S_IFDIR")
+                // Parse the string array into a dictionary
+                var infoDict = new Dictionary<string, string>();
+                if (info.Count % 2 != 0)
+                {
+                    // Log or handle the case where info.Count is not even
+                    // For now, we ignore the last element if odd
+                }
+                for (int i = 0; i < info.Count - 1; i += 2)
+                {
+                    infoDict[info[i]] = info[i + 1];
+                }
+
+                if (infoDict.ContainsKey("st_ifmt") && infoDict["st_ifmt"] == "S_IFDIR")
                 {
                     PopulateAppFileTree(node, fullPath, afcHandle);
                 }
@@ -703,14 +712,14 @@ namespace infex1rn.ViewModels
 
         private void InstallationStatusCallback(string operation, PlistHandle status)
         {
-            if (status.IsNotNull)
+            if (!status.IsInvalid)
             {
                 var plist = LibiMobileDevice.Instance.Plist;
                 PlistHandle percentNode = plist.plist_dict_get_item(status, "PercentComplete");
-                if (percentNode.IsNotNull)
+                if (!percentNode.IsInvalid)
                 {
-                    ulong percent;
-                    plist.plist_get_uint_val(percentNode, out percent);
+                    ulong percent = 0;
+                    plist.plist_get_uint_val(percentNode, ref percent);
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         InstallationProgress = percent;
@@ -732,7 +741,7 @@ namespace infex1rn.ViewModels
                 }
 
                 PlistHandle errorNode = plist.plist_dict_get_item(status, "Error");
-                if (errorNode.IsNotNull)
+                if (!errorNode.IsInvalid)
                 {
                     string error;
                     plist.plist_get_string_val(errorNode, out error);
