@@ -1,6 +1,7 @@
 using iMobileDevice;
 using iMobileDevice.iDevice;
 using iMobileDevice.Lockdown;
+using iMobileDevice.Plist;
 using iMobileDevice.Recovery;
 using System;
 using System.Collections.Generic;
@@ -102,44 +103,56 @@ namespace infex1rn.Services
         public void ExitRecovery(string udid)
         {
             var idevice = LibiMobileDevice.Instance.iDevice;
+            var lockdown = LibiMobileDevice.Instance.Lockdown;
+            var plist = LibiMobileDevice.Instance.Plist;
             var recovery = LibiMobileDevice.Instance.Recovery;
 
             iDeviceHandle deviceHandle;
             idevice.idevice_new(out deviceHandle, udid).ThrowOnError();
             using(deviceHandle)
             {
-                RecoveryClientHandle recoveryHandle;
-                recovery.irecv_client_new(deviceHandle, out recoveryHandle, "infex1rn").ThrowOnError();
-                using(recoveryHandle)
+                LockdownClientHandle lockdownHandle;
+                lockdown.lockdownd_client_new_with_handshake(deviceHandle, out lockdownHandle, "infex1rn").ThrowOnError();
+                using(lockdownHandle)
                 {
-                    recovery.irecv_setenv(recoveryHandle, "auto-boot", "true").ThrowOnError();
-                    recovery.irecv_saveenv(recoveryHandle).ThrowOnError();
-                    recovery.irecv_reboot(recoveryHandle).ThrowOnError();
+                    PlistHandle ecidNode;
+                    lockdown.lockdownd_get_value(lockdownHandle, null, "UniqueChipID", out ecidNode).ThrowOnError();
+                    using(ecidNode)
+                    {
+                        ulong ecid;
+                        plist.plist_get_uint_val(ecidNode, out ecid);
+                        
+                        lockdown.lockdownd_enter_recovery(lockdownHandle).ThrowOnError();
+                    }
                 }
+            }
+            
+            System.Threading.Thread.Sleep(2000);
+            
+            RecoveryClientHandle recoveryHandle;
+            recovery.irecv_open_with_ecid(out recoveryHandle, 0).ThrowOnError();
+            using(recoveryHandle)
+            {
+                recovery.irecv_setenv(recoveryHandle, "auto-boot", "true").ThrowOnError();
+                recovery.irecv_saveenv(recoveryHandle).ThrowOnError();
+                recovery.irecv_reboot(recoveryHandle).ThrowOnError();
             }
         }
 
         public void LoadRamdisk(string udid, string ramdiskPath)
         {
-            var idevice = LibiMobileDevice.Instance.iDevice;
             var recovery = LibiMobileDevice.Instance.Recovery;
 
-            iDeviceHandle deviceHandle;
-            idevice.idevice_new(out deviceHandle, udid).ThrowOnError();
-            using(deviceHandle)
+            RecoveryClientHandle recoveryHandle;
+            recovery.irecv_open_with_ecid(out recoveryHandle, 0).ThrowOnError();
+            using(recoveryHandle)
             {
-                RecoveryClientHandle recoveryHandle;
-                recovery.irecv_client_new(deviceHandle, out recoveryHandle, "infex1rn").ThrowOnError();
-                using(recoveryHandle)
-                {
-                    byte[] ramdiskBytes = File.ReadAllBytes(ramdiskPath);
-                    recovery.irecv_send_buffer(recoveryHandle, ramdiskBytes, (uint)ramdiskBytes.Length, 1).ThrowOnError();
+                recovery.irecv_send_file(recoveryHandle, ramdiskPath, 1).ThrowOnError();
 
-                    recovery.irecv_setenv(recoveryHandle, "boot-args", "-v").ThrowOnError();
-                    recovery.irecv_saveenv(recoveryHandle).ThrowOnError();
+                recovery.irecv_setenv(recoveryHandle, "boot-args", "-v").ThrowOnError();
+                recovery.irecv_saveenv(recoveryHandle).ThrowOnError();
 
-                    recovery.irecv_send_command(recoveryHandle, "ramdisk").ThrowOnError();
-                }
+                recovery.irecv_send_command(recoveryHandle, "ramdisk").ThrowOnError();
             }
         }
 
