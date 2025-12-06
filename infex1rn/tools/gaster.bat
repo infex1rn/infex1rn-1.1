@@ -1,2 +1,2 @@
 @echo off
-gaster.exe %*
+gasterr\gaster.exe %*

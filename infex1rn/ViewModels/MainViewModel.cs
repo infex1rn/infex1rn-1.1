@@ -134,6 +134,8 @@ namespace infex1rn.ViewModels
         public ICommand AddFileToRamdiskCommand { get; }
         public ICommand RemoveFileFromRamdiskCommand { get; }
         public ICommand SaveRamdiskCommand { get; }
+        public ICommand RamdiskExploitCommand { get; }
+        public ICommand A10HelloBypassCommand { get; }
 
         public MainViewModel()
         {
@@ -164,6 +166,8 @@ namespace infex1rn.ViewModels
             RemoveFileFromRamdiskCommand = new RelayCommand(RemoveFileFromRamdisk);
             SaveRamdiskCommand = new RelayCommand(SaveRamdisk);
             BypassActivationLockCommand = new RelayCommand(BypassActivationLock);
+            RamdiskExploitCommand = new RelayCommand(RamdiskExploit);
+            A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
         }
 
         private async void BypassActivationLock()
@@ -174,6 +178,55 @@ namespace infex1rn.ViewModels
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 string bypassPath = Path.Combine(baseDirectory, "tools", "bypass.bat");
                 await _deviceService.RunExternalTool(bypassPath, "", (output) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ToolOutput += output + Environment.NewLine;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void RamdiskExploit()
+        {
+            ToolOutput = "";
+            try
+            {
+                var openFileDialog = new OpenFileDialog { Filter = "Ramdisk files (*.dmg)|*.dmg|All files (*.*)|*.*" };
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string ramdiskBatPath = Path.Combine(baseDirectory, "tools", "ramdisk.bat");
+                    ToolOutput = "Starting ramdisk exploit using checkm8...\n";
+                    await _deviceService.RunExternalTool(ramdiskBatPath, $"\"{openFileDialog.FileName}\"", (output) =>
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ToolOutput += output + Environment.NewLine;
+                        });
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void A10HelloBypass()
+        {
+            ToolOutput = "";
+            try
+            {
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string a10BypassPath = Path.Combine(baseDirectory, "tools", "a10_hello_bypass.bat");
+                ToolOutput = "Starting A10 Hello Bypass with Signals...\n";
+                ToolOutput += "Make sure your iPhone 7/7+ is in DFU mode.\n\n";
+                await _deviceService.RunExternalTool(a10BypassPath, "", (output) =>
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {

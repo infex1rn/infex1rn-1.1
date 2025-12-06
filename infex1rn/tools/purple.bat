@@ -1,2 +1,2 @@
 @echo off
-irecovery.exe -s
+libimobiledevice\irecovery.exe -s
