@@ -1,2 +1,2 @@
 @echo off
-echo purple: Purple mode entered successfully.
+irecovery.exe -s
