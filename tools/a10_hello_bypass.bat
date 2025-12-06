@@ -7,7 +7,7 @@ echo [*] Supported devices: iPhone 7, iPhone 7 Plus (A10 Fusion)
 echo.
 
 echo [*] Step 1: Putting device in pwned DFU mode using checkm8...
-gasterr\gaster.exe pwn
+gaster\gaster.exe pwn
 if errorlevel 1 (
     echo [!] Failed to put device in pwned DFU mode
     echo [!] Make sure device is in DFU mode and connected via USB

@@ -2,7 +2,7 @@
 REM Ramdisk exploit using checkm8 - First put device in pwned DFU mode, then load ramdisk
 echo [*] Starting ramdisk exploit using checkm8...
 echo [*] Step 1: Putting device in pwned DFU mode...
-gasterr\gaster.exe pwn
+gaster\gaster.exe pwn
 if errorlevel 1 (
     echo [!] Failed to put device in pwned DFU mode
     exit /b 1
