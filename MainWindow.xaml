@@ -6,24 +6,157 @@
         xmlns:local="clr-namespace:infex1rn"
         xmlns:viewModels="clr-namespace:infex1rn.ViewModels"
         mc:Ignorable="d"
-        Title="infex1rn" Height="450" Width="800">
+        Title="infex1rn - iOS Device Management Suite" Height="600" Width="1000" 
+        Background="#FF1E1E1E" WindowStartupLocation="CenterScreen">
     <Window.DataContext>
         <viewModels:MainViewModel/>
     </Window.DataContext>
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#FF3F3F3F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FF0078D7"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#FF0078D7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FF005A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#FF2D2D2D"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#FF3D3D3D"/>
+                                <Setter Property="Foreground" Value="#FF666666"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Success Button Style -->
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#FF4CAF50"/>
+            <Setter Property="BorderBrush" Value="#FF4CAF50"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF66BB6A"/>
+                    <Setter Property="BorderBrush" Value="#FF66BB6A"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FF388E3C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Primary Button Style -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#FF2196F3"/>
+            <Setter Property="BorderBrush" Value="#FF2196F3"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF42A5F5"/>
+                    <Setter Property="BorderBrush" Value="#FF42A5F5"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FF1976D2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Fade In Animation -->
+        <Storyboard x:Key="FadeIn">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+        </Storyboard>
+    </Window.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="220" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0">
-            <Button Content="List Devices" Command="{Binding ListDevicesCommand}" Margin="10" />
-            <ListView ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" Margin="10" />
-        </StackPanel>
+        <!-- Left Panel -->
+        <Border Grid.Column="0" Background="#FF2D2D2D" BorderBrush="#FF3D3D3D" BorderThickness="0,0,1,0">
+            <StackPanel>
+                <TextBlock Text="Device Management" FontSize="14" FontWeight="Bold" 
+                           Foreground="White" Margin="10,10,10,5" />
+                <Button Content="🔄 List Devices" Command="{Binding ListDevicesCommand}" 
+                        Margin="10" Style="{StaticResource ModernButton}" />
+                <ListView ItemsSource="{Binding Devices}" 
+                          SelectedItem="{Binding SelectedDevice}" 
+                          Margin="10,0,10,10" 
+                          Background="#FF3F3F3F" 
+                          Foreground="White" 
+                          BorderBrush="#FF555555"
+                          Height="150"/>
+                
+                <TextBlock Text="Quick Actions" FontSize="14" FontWeight="Bold" 
+                           Foreground="White" Margin="10,10,10,5" />
+                <Button Content="⚡ Enter Recovery" Command="{Binding EnterRecoveryCommand}" 
+                        Margin="10,5,10,5" Style="{StaticResource ModernButton}" />
+                <Button Content="🔓 Exit Recovery" Command="{Binding ExitRecoveryCommand}" 
+                        Margin="10,5,10,5" Style="{StaticResource ModernButton}" />
+            </StackPanel>
+        </Border>
 
-        <TabControl Grid.Column="1" Margin="10">
-            <TabItem Header="Device Information">
-                <Grid>
+        <!-- Main Content Area -->
+        <TabControl Grid.Column="1" Margin="0" Background="#FF1E1E1E" 
+                    BorderBrush="#FF3D3D3D" Foreground="White">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border" Background="#FF2D2D2D" BorderBrush="#FF3D3D3D" 
+                                        BorderThickness="1,1,1,0" CornerRadius="3,3,0,0" Margin="2,0">
+                                    <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" 
+                                                      HorizontalAlignment="Center" ContentSource="Header" 
+                                                      Margin="10,5"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="#FF0078D7"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="#FF3F3F3F"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontSize" Value="13"/>
+                </Style>
+            </TabControl.Resources>
+            
+            <TabItem Header="📱 Device Info">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -35,96 +168,176 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="Device Name:" Grid.Row="0" Grid.Column="0" Margin="5" />
-                    <TextBox Text="{Binding DeviceName}" Grid.Row="0" Grid.Column="1" Margin="5" IsReadOnly="True" />
+                    <Label Content="Device Name:" Grid.Row="0" Grid.Column="0" Margin="15" Foreground="White" FontSize="13"/>
+                    <TextBox Text="{Binding DeviceName}" Grid.Row="0" Grid.Column="1" Margin="15" IsReadOnly="True" 
+                             Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555" Padding="5"/>
 
-                    <Label Content="Model:" Grid.Row="1" Grid.Column="0" Margin="5" />
-                    <TextBox Text="{Binding Model}" Grid.Row="1" Grid.Column="1" Margin="5" IsReadOnly="True" />
+                    <Label Content="Model:" Grid.Row="1" Grid.Column="0" Margin="15" Foreground="White" FontSize="13"/>
+                    <TextBox Text="{Binding Model}" Grid.Row="1" Grid.Column="1" Margin="15" IsReadOnly="True" 
+                             Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555" Padding="5"/>
 
-                    <Label Content="iOS Version:" Grid.Row="2" Grid.Column="0" Margin="5" />
-                    <TextBox Text="{Binding IOSVersion}" Grid.Row="2" Grid.Column="1" Margin="5" IsReadOnly="True" />
+                    <Label Content="iOS Version:" Grid.Row="2" Grid.Column="0" Margin="15" Foreground="White" FontSize="13"/>
+                    <TextBox Text="{Binding IOSVersion}" Grid.Row="2" Grid.Column="1" Margin="15" IsReadOnly="True" 
+                             Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555" Padding="5"/>
 
-                    <Label Content="Serial Number:" Grid.Row="3" Grid.Column="0" Margin="5" />
-                    <TextBox Text="{Binding SerialNumber}" Grid.Row="3" Grid.Column="1" Margin="5" IsReadOnly="True" />
+                    <Label Content="Serial Number:" Grid.Row="3" Grid.Column="0" Margin="15" Foreground="White" FontSize="13"/>
+                    <TextBox Text="{Binding SerialNumber}" Grid.Row="3" Grid.Column="1" Margin="15" IsReadOnly="True" 
+                             Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555" Padding="5"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="App Management">
-                <Grid>
+            
+            <TabItem Header="📦 App Management">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ListView ItemsSource="{Binding Apps}" Margin="10" Grid.Row="0" />
-                    <Button Content="Install IPA" Command="{Binding InstallIpaCommand}" Margin="10,0,10,10" Grid.Row="1" />
-                    <ProgressBar Value="{Binding InstallationProgress}" Height="20" Margin="10,0,10,10" Grid.Row="2" />
+                    <ListView ItemsSource="{Binding Apps}" Margin="15,15,15,10" Grid.Row="0" 
+                              Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"/>
+                    <Button Content="📲 Install IPA" Command="{Binding InstallIpaCommand}" 
+                            Margin="15,0,15,10" Grid.Row="1" Style="{StaticResource PrimaryButton}"/>
+                    <ProgressBar Value="{Binding InstallationProgress}" Height="25" 
+                                 Margin="15,0,15,15" Grid.Row="2" 
+                                 Background="#FF3F3F3F" Foreground="#FF0078D7" BorderBrush="#FF555555"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="File Manager">
-                <Grid>
+            
+            <TabItem Header="📁 File Manager">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <ComboBox ItemsSource="{Binding FileSharingApps}" SelectedItem="{Binding SelectedFileSharingApp}" Margin="10" Grid.Row="0" DisplayMemberPath="Key" />
-                    <TreeView ItemsSource="{Binding AppFileTree}" Margin="10,0,10,10" Grid.Row="1" />
+                    <ComboBox ItemsSource="{Binding FileSharingApps}" SelectedItem="{Binding SelectedFileSharingApp}" 
+                              Margin="15" Grid.Row="0" DisplayMemberPath="Key" 
+                              Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"/>
+                    <TreeView ItemsSource="{Binding AppFileTree}" Margin="15,0,15,15" Grid.Row="1" 
+                              Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="System Utilities">
-                <Grid>
+            
+            <TabItem Header="🛠️ System Utilities">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0">
-                        <Button Content="Enter Recovery Mode" Command="{Binding EnterRecoveryCommand}" Margin="10" />
-                        <Button Content="Exit Recovery Mode" Command="{Binding ExitRecoveryCommand}" Margin="10" />
-                        <Button Content="Load Ramdisk" Command="{Binding LoadRamdiskCommand}" Margin="10" />
-                        <Button Content="Enter PwnDFU" Command="{Binding EnterPwnDfuCommand}" Margin="10" />
-                        <Button Content="Enter Purple Mode" Command="{Binding EnterPurpleModeCommand}" Margin="10" />
-                        <Button Content="Bypass Activation Lock" Command="{Binding BypassActivationLockCommand}" Margin="10" />
-                        <Button Content="Ramdisk Exploit (checkm8)" Command="{Binding RamdiskExploitCommand}" Margin="10" />
-                        <Button Content="A10 Hello Bypass (Signals)" Command="{Binding A10HelloBypassCommand}" Margin="10" />
-                        <Button Content="Auto Extract Ramdisk (from IPSW)" Command="{Binding AutoExtractRamdiskCommand}" Margin="10" Background="#FF2196F3" Foreground="White" ToolTip="Automatically extract and patch ramdisk from IPSW to remove Setup.app" />
-                        <Button Content="Untethered Bypass" Command="{Binding UnthetheredBypassCommand}" Margin="10" Background="#FF4CAF50" Foreground="White" />
-                    </StackPanel>
-                    <TextBox Grid.Row="1" Text="{Binding ToolOutput}" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="10" />
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="300">
+                        <StackPanel>
+                            <Button Content="🔄 Load Ramdisk" Command="{Binding LoadRamdiskCommand}" 
+                                    Margin="15,15,15,5" Style="{StaticResource ModernButton}" />
+                            <Button Content="⚡ Enter PwnDFU" Command="{Binding EnterPwnDfuCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource ModernButton}" />
+                            <Button Content="🟣 Enter Purple Mode" Command="{Binding EnterPurpleModeCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource ModernButton}" />
+                            <Button Content="🔓 Bypass Activation Lock" Command="{Binding BypassActivationLockCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
+                            <Button Content="💾 Ramdisk Exploit (checkm8)" Command="{Binding RamdiskExploitCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
+                            <Button Content="📱 A10 Hello Bypass (Signals)" Command="{Binding A10HelloBypassCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}" />
+                            <Button Content="🎯 Auto Extract Ramdisk (from IPSW)" Command="{Binding AutoExtractRamdiskCommand}" 
+                                    Margin="15,5,15,5" Style="{StaticResource PrimaryButton}"
+                                    ToolTip="Automatically extract and patch ramdisk from IPSW to remove Setup.app" />
+                            <Button Content="✅ Untethered Bypass" Command="{Binding UnthetheredBypassCommand}" 
+                                    Margin="15,5,15,10" Style="{StaticResource SuccessButton}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <TextBox Grid.Row="1" Text="{Binding ToolOutput}" IsReadOnly="True" 
+                             ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="15,0,15,15" 
+                             Background="#FF3F3F3F" Foreground="#FFCCCCCC" BorderBrush="#FF555555" 
+                             FontFamily="Consolas" FontSize="12" Padding="8"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="CFW Studio">
-                <Grid>
+            
+            <TabItem Header="🔧 CFW Studio">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Button Content="Load IPSW" Command="{Binding LoadIpswCommand}" Margin="10" Grid.Row="0" />
-                    <Button Content="Extract Ramdisk" Command="{Binding ExtractRamdiskCommand}" IsEnabled="{Binding IsRamdiskPresent}" Margin="10,0,10,10" Grid.Row="1" />
-                    <TreeView ItemsSource="{Binding IpswTree}" Margin="10,0,10,10" Grid.Row="2">
+                    <Button Content="📁 Load IPSW" Command="{Binding LoadIpswCommand}" 
+                            Margin="15,15,15,10" Grid.Row="0" Style="{StaticResource PrimaryButton}" />
+                    <Button Content="💾 Extract Ramdisk" Command="{Binding ExtractRamdiskCommand}" 
+                            IsEnabled="{Binding IsRamdiskPresent}" Margin="15,0,15,10" Grid.Row="1" 
+                            Style="{StaticResource SuccessButton}" />
+                    <TextBlock Grid.Row="2" Margin="15,0,15,10" Foreground="#FF888888" FontStyle="Italic" TextWrapping="Wrap"
+                               Text="💡 Tip: Drag and drop IPSW files directly into the tree below!"/>
+                    <TreeView x:Name="IpswTreeView" ItemsSource="{Binding IpswTree}" Margin="15,0,15,15" Grid.Row="3" 
+                              Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"
+                              AllowDrop="True" 
+                              DragEnter="IpswTreeView_DragEnter" 
+                              Drop="IpswTreeView_Drop">
                         <TreeView.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Extract..." Command="{Binding ExtractIpswCommand}" />
+                            <ContextMenu Background="#FF3F3F3F" Foreground="White">
+                                <MenuItem Header="📤 Extract..." Command="{Binding ExtractIpswCommand}" 
+                                          Background="#FF3F3F3F" Foreground="White"/>
                             </ContextMenu>
                         </TreeView.ContextMenu>
                     </TreeView>
                 </Grid>
             </TabItem>
-            <TabItem Header="Ramdisk Studio">
-                <Grid>
+            
+            <TabItem Header="💿 Ramdisk Studio">
+                <Grid Background="#FF1E1E1E">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource FadeIn}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Button Content="Load Ramdisk" Command="{Binding LoadRamdiskFileCommand}" Margin="10" Grid.Row="0" />
-                    <TreeView ItemsSource="{Binding RamdiskTree}" Margin="10,0,10,10" Grid.Row="1" />
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Add File" Command="{Binding AddFileToRamdiskCommand}" Margin="10" />
-                        <Button Content="Remove File" Command="{Binding RemoveFileFromRamdiskCommand}" Margin="10" />
-                        <Button Content="Save Ramdisk" Command="{Binding SaveRamdiskCommand}" Margin="10" />
+                    <Button Content="📁 Load Ramdisk" Command="{Binding LoadRamdiskFileCommand}" 
+                            Margin="15,15,15,10" Grid.Row="0" Style="{StaticResource PrimaryButton}" />
+                    <TreeView ItemsSource="{Binding RamdiskTree}" Margin="15,0,15,10" Grid.Row="1" 
+                              Background="#FF3F3F3F" Foreground="White" BorderBrush="#FF555555"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="15,0,15,15">
+                        <Button Content="➕ Add File" Command="{Binding AddFileToRamdiskCommand}" 
+                                Margin="0,0,10,0" Style="{StaticResource ModernButton}" />
+                        <Button Content="➖ Remove File" Command="{Binding RemoveFileFromRamdiskCommand}" 
+                                Margin="0,0,10,0" Style="{StaticResource ModernButton}" />
+                        <Button Content="💾 Save Ramdisk" Command="{Binding SaveRamdiskCommand}" 
+                                Style="{StaticResource SuccessButton}" />
                     </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#FF2D2D2D" BorderBrush="#FF3D3D3D" BorderThickness="0,1,0,0" Height="25">
+            <Grid>
+                <TextBlock Text="infex1rn v1.1 - iOS Device Management &amp; iCloud Bypass Tool" 
+                           Foreground="#FF888888" VerticalAlignment="Center" Margin="10,0" FontSize="11"/>
+                <TextBlock Text="⚠️ For Educational &amp; Authorized Use Only" 
+                           Foreground="#FFFF9800" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                           Margin="0,0,10,0" FontSize="11" FontWeight="Bold"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
