@@ -135,6 +135,7 @@ namespace infex1rn.ViewModels
         public ICommand RemoveFileFromRamdiskCommand { get; }
         public ICommand SaveRamdiskCommand { get; }
         public ICommand RamdiskExploitCommand { get; }
+        public ICommand A10HelloBypassCommand { get; }
 
         public MainViewModel()
         {
@@ -166,6 +167,7 @@ namespace infex1rn.ViewModels
             SaveRamdiskCommand = new RelayCommand(SaveRamdisk);
             BypassActivationLockCommand = new RelayCommand(BypassActivationLock);
             RamdiskExploitCommand = new RelayCommand(RamdiskExploit);
+            A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
         }
 
         private async void BypassActivationLock()
@@ -208,6 +210,29 @@ namespace infex1rn.ViewModels
                         });
                     });
                 }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput = $"Error: {ex.Message}";
+            }
+        }
+
+        private async void A10HelloBypass()
+        {
+            ToolOutput = "";
+            try
+            {
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string a10BypassPath = Path.Combine(baseDirectory, "tools", "a10_hello_bypass.bat");
+                ToolOutput = "Starting A10 Hello Bypass with Signals...\n";
+                ToolOutput += "Make sure your iPhone 7/7+ is in DFU mode.\n\n";
+                await _deviceService.RunExternalTool(a10BypassPath, "", (output) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ToolOutput += output + Environment.NewLine;
+                    });
+                });
             }
             catch (Exception ex)
             {
