@@ -496,8 +496,10 @@ namespace infex1rn.ViewModels
                                     PlistHandle fileSharingNode = plist.plist_dict_get_item(appNode, "UIFileSharingEnabled");
                                     if (!fileSharingNode.IsInvalid)
                                     {
-                                        bool fileSharingEnabled;
-                                        plist.plist_get_bool_val(fileSharingNode, out fileSharingEnabled);
+                                        bool fileSharingEnabled = false;
+                                        char boolVal = '\0';
+                                        plist.plist_get_bool_val(fileSharingNode, ref boolVal);
+                                        fileSharingEnabled = boolVal != '\0';
                                         if (fileSharingEnabled)
                                         {
                                             PlistHandle appNameNode = plist.plist_dict_get_item(appNode, "CFBundleDisplayName");
@@ -540,7 +542,7 @@ namespace infex1rn.ViewModels
                 using (houseArrestHandle)
                 {
                     AfcClientHandle afcHandle;
-                    afc.afc_client_new_from_house_arrest_client(houseArrestHandle, out afcHandle).ThrowOnError();
+                    houseArrest.afc_client_new_from_house_arrest_client(houseArrestHandle, out afcHandle).ThrowOnError();
                     using (afcHandle)
                     {
                         houseArrest.house_arrest_send_command(houseArrestHandle, "VendContainer", SelectedFileSharingApp.Value).ThrowOnError();
@@ -716,8 +718,8 @@ namespace infex1rn.ViewModels
                 PlistHandle percentNode = plist.plist_dict_get_item(status, "PercentComplete");
                 if (!percentNode.IsInvalid)
                 {
-                    ulong percent;
-                    plist.plist_get_uint_val(percentNode, out percent);
+                    ulong percent = 0;
+                    plist.plist_get_uint_val(percentNode, ref percent);
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         InstallationProgress = percent;

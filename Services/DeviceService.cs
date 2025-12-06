@@ -123,7 +123,7 @@ namespace infex1rn.Services
                     lockdown.lockdownd_get_value(lockdownHandle, null, "UniqueChipID", out ecidNode).ThrowOnError();
                     using(ecidNode)
                     {
-                        plist.plist_get_uint_val(ecidNode, out ecid);
+                        plist.plist_get_uint_val(ecidNode, ref ecid);
                     }
                     
                     lockdown.lockdownd_enter_recovery(lockdownHandle).ThrowOnError();
@@ -162,7 +162,7 @@ namespace infex1rn.Services
                     lockdown.lockdownd_get_value(lockdownHandle, null, "UniqueChipID", out ecidNode).ThrowOnError();
                     using(ecidNode)
                     {
-                        plist.plist_get_uint_val(ecidNode, out ecid);
+                        plist.plist_get_uint_val(ecidNode, ref ecid);
                     }
                 }
             }

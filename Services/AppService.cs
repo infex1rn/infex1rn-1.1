@@ -78,8 +78,10 @@ namespace infex1rn.Services
                     installationProxy.instproxy_client_start_service(deviceHandle, out client, "infex1rn").ThrowOnError();
                     using (client)
                     {
-                        installationProxy.instproxy_install(client, ipaPath, null, (string operation, PlistHandle status, IntPtr userData) =>
+                        installationProxy.instproxy_install(client, ipaPath, null, (IntPtr commandPtr, IntPtr statusPtr, IntPtr userData) =>
                         {
+                            string operation = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(commandPtr);
+                            PlistHandle status = PlistHandle.DangerousCreate(statusPtr, false);
                             statusCallback(operation, status);
                         }, IntPtr.Zero).ThrowOnError();
                     }
