@@ -178,7 +178,7 @@ echo     [*] Setting up jailbreak detection bypass
 echo     [*] Configuring environment variables
 echo.
 
-REM Step 11: Reboot device
+REM Step 13: Reboot device
 echo [*] Step 13: Finalizing jailbreak...
 echo [*] The device will now reboot...
 libimobiledevice\irecovery.exe -c reboot 2>nul
