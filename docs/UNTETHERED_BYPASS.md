@@ -166,3 +166,103 @@ untethered_bypass.bat hello
 - The iPhone Wiki: https://www.theiphonewiki.com
 - IPSW Downloads: https://ipsw.me
 - Firmware Keys: https://www.theiphonewiki.com/wiki/Firmware_Keys
+
+## Palera1n Jailbreak
+
+infex1rn now includes **Palera1n jailbreak** support! This is a semi-tethered jailbreak for A8-A11 devices.
+
+### What is Palera1n?
+
+Palera1n is a modern jailbreak tool that uses the checkm8 exploit to jailbreak iOS devices. Unlike iCloud bypasses, jailbreaking gives you full control over your device with tweak support.
+
+### Key Features
+
+- **Semi-tethered**: Jailbreak persists after reboot, but must be re-applied after each restart
+- **iOS Support**: iOS 15.0 - 18.x
+- **Device Support**: A8-A11 devices (iPhone 6s - iPhone X)
+- **Two Modes**:
+  - **Rootful**: Full root filesystem access (traditional jailbreak, compatible with older tweaks)
+  - **Rootless**: Modern jailbreak without modifying root partition (safer, better stability)
+
+### How to Use
+
+1. **Prepare Files**: Place required boot files in `ramdisks/` directory:
+   - `ibss.img4` - iBSS bootloader
+   - `ibec.img4` - iBEC bootloader
+   - `ramdisk.dmg` - SSH ramdisk with jailbreak payload
+   - `devicetree.img4` (optional)
+   - `trustcache.img4` (optional)
+   - `Pongo.bin` (optional but recommended)
+
+2. **Put Device in DFU Mode**:
+   - Connect device to computer
+   - Follow DFU mode instructions for your device model
+
+3. **Run Palera1n**:
+   - Go to **System Utilities** tab
+   - Click **"Palera1n Jailbreak"** (purple button)
+   - Choose mode:
+     - Click **YES** for Rootful mode
+     - Click **NO** for Rootless mode
+   - Wait for the process to complete (2-3 minutes)
+
+4. **After Jailbreak**:
+   - Device will reboot
+   - Sileo package manager will be installed
+   - OpenSSH server running (default password: `alpine`)
+   - Install tweaks from Sileo
+
+### Important Notes for A11 Devices (iPhone 8/8+/X)
+
+⚠️ **MUST disable passcode** before jailbreaking
+⚠️ Face ID / Touch ID / Apple Pay **will NOT work**
+⚠️ Secure Enclave features will be unavailable
+
+### Palera1n vs iCloud Bypass
+
+| Feature | Palera1n Jailbreak | iCloud Bypass |
+|---------|-------------------|---------------|
+| Purpose | Full device control + tweaks | Remove activation lock |
+| Cellular | ✅ Works | ⚠️ Limited/None |
+| Apps | ✅ All apps work | ⚠️ Some may not work |
+| Tweaks | ✅ Full tweak support | ❌ No tweaks |
+| App Store | ✅ Works | ⚠️ May not work |
+| After reboot | Re-jailbreak needed | Works normally |
+
+### Differences from Untethered Bypass
+
+- **Palera1n** = Full jailbreak with package manager and tweaks
+- **Untethered Bypass** = Just removes activation lock
+- **Use Palera1n** if you want to customize iOS with tweaks
+- **Use Untethered Bypass** if you just need to bypass activation
+
+### Troubleshooting Palera1n
+
+**"PongoOS not found"**
+- Download Pongo.bin and place in `ramdisks/`
+- Or continue without it (will use standard boot chain)
+
+**"Device doesn't boot after jailbreak"**
+- Wait 2-3 minutes for first boot
+- If stuck, force restart and try again
+- Ensure you have the correct boot files for your device
+
+**"Sileo not appearing"**
+- Wait a few minutes after boot
+- Reboot device and re-jailbreak
+- Check if SSH ramdisk has jailbreak payload
+
+### Command Line Usage
+
+```batch
+cd tools
+palera1n.bat rootful    # For rootful mode
+palera1n.bat rootless   # For rootless mode
+```
+
+### Resources
+
+- Palera1n Official: https://palera1n.com
+- GitHub: https://github.com/palera1n/palera1n
+- iOS Guide: https://ios.cfw.guide
+
