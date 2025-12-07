@@ -138,6 +138,7 @@ namespace infex1rn.ViewModels
         public ICommand A10HelloBypassCommand { get; }
         public ICommand UnthetheredBypassCommand { get; }
         public ICommand AutoExtractRamdiskCommand { get; }
+        public ICommand Palera1nJailbreakCommand { get; }
 
         public MainViewModel()
         {
@@ -172,6 +173,7 @@ namespace infex1rn.ViewModels
             A10HelloBypassCommand = new RelayCommand(A10HelloBypass);
             UnthetheredBypassCommand = new RelayCommand(UnthetheredBypass);
             AutoExtractRamdiskCommand = new RelayCommand(AutoExtractRamdisk);
+            Palera1nJailbreakCommand = new RelayCommand(Palera1nJailbreak);
         }
 
         private async void AutoExtractRamdisk()
@@ -232,6 +234,54 @@ namespace infex1rn.ViewModels
                         ToolOutput += $"[!] Extraction failed: {result.Error}\n";
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                ToolOutput += $"\n[!] Error: {ex.Message}\n";
+            }
+        }
+
+        private async void Palera1nJailbreak()
+        {
+            ToolOutput = "";
+            try
+            {
+                // Prompt user to select jailbreak mode
+                var result = MessageBox.Show(
+                    "Select Palera1n jailbreak mode:\n\n" +
+                    "YES = Rootful (Full root filesystem access, traditional jailbreak)\n" +
+                    "NO = Rootless (Modern, safer jailbreak without modifying root)\n\n" +
+                    "Rootful is compatible with older tweaks.\n" +
+                    "Rootless is recommended for better stability.\n\n" +
+                    "Note: Device must be in DFU mode before starting.",
+                    "Palera1n Jailbreak Mode",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+
+                string mode = result == MessageBoxResult.Yes ? "rootful" : "rootless";
+
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string palera1nPath = Path.Combine(baseDirectory, "tools", "palera1n.bat");
+                
+                ToolOutput = "=== Palera1n Jailbreak ===\n\n";
+                ToolOutput += $"Mode: {mode.ToUpper()}\n";
+                ToolOutput += "Target: A8-A11 devices (iPhone 6s - iPhone X)\n";
+                ToolOutput += "iOS: 15.0 - 18.x\n\n";
+                ToolOutput += "Starting jailbreak process...\n";
+                ToolOutput += "Please ensure your device is in DFU mode.\n\n";
+                
+                await _deviceService.RunExternalTool(palera1nPath, mode, (output) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ToolOutput += output + Environment.NewLine;
+                    });
+                });
             }
             catch (Exception ex)
             {
