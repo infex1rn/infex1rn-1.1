@@ -87,6 +87,7 @@
                         <Button Content="A10 Hello Bypass (Signals)" Command="{Binding A10HelloBypassCommand}" Margin="10" />
                         <Button Content="Auto Extract Ramdisk (from IPSW)" Command="{Binding AutoExtractRamdiskCommand}" Margin="10" Background="#FF2196F3" Foreground="White" ToolTip="Automatically extract and patch ramdisk from IPSW to remove Setup.app" />
                         <Button Content="Untethered Bypass" Command="{Binding UnthetheredBypassCommand}" Margin="10" Background="#FF4CAF50" Foreground="White" />
+                        <Button Content="Palera1n Jailbreak" Command="{Binding Palera1nJailbreakCommand}" Margin="10" Background="#FF9C27B0" Foreground="White" ToolTip="Semi-tethered jailbreak for A8-A11 devices using checkm8 exploit. Supports iOS 15-18. Choose rootful or rootless mode." />
                     </StackPanel>
                     <TextBox Grid.Row="1" Text="{Binding ToolOutput}" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="10" />
                 </Grid>

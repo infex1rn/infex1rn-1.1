@@ -34,12 +34,13 @@ For untethered bypass, you need the following device-specific files:
 ### Option 1: Create Your Own
 You can create custom ramdisks using the following tools:
 1. **SSHRD_Script** - Popular script for creating SSH ramdisks
-2. **palera1n** - Includes ramdisk creation capabilities
+2. **palera1n** - Includes ramdisk creation capabilities and jailbreak functionality
 3. **Legacy-iOS-Kit** - For older iOS versions
 
 ### Option 2: Pre-built Ramdisks
 Check these resources for pre-built ramdisks:
 - The iPhone Wiki (theiphonewiki.com)
+- palera1n.com (for palera1n jailbreak ramdisks)
 - Community forums and repositories
 
 ## Supported Devices
@@ -68,6 +69,15 @@ Ramdisk-based exploits work on devices with checkm8 vulnerability:
 1. Place all required boot files in this directory
 2. Use the "Untethered Bypass" feature in infex1rn
 3. The bypass will persist after device reboots
+
+### Palera1n Jailbreak (New!)
+1. Place all required boot files in this directory
+2. Click the "Palera1n Jailbreak" button in System Utilities
+3. Choose between rootful or rootless mode:
+   - **Rootful**: Full root filesystem access (traditional jailbreak)
+   - **Rootless**: Modern, safer jailbreak without modifying root partition
+4. Follow the on-screen instructions
+5. Compatible with iOS 15.0 - 18.x on A8-A11 devices
 
 ## Important Notes
 
