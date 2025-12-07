@@ -246,6 +246,24 @@ namespace infex1rn.ViewModels
             ToolOutput = "";
             try
             {
+                // Show important A11 warning first
+                var warningResult = MessageBox.Show(
+                    "⚠️ IMPORTANT WARNING for A11 Devices (iPhone 8/8+/X) ⚠️\n\n" +
+                    "If you have an iPhone 8, 8 Plus, or iPhone X, you MUST:\n" +
+                    "• Disable passcode BEFORE jailbreaking\n" +
+                    "• Face ID / Touch ID / Apple Pay will NOT work\n" +
+                    "• Secure Enclave features will be unavailable\n\n" +
+                    "For A8-A10 devices (iPhone 6s, 7), these limitations do NOT apply.\n\n" +
+                    "Do you understand and want to continue?",
+                    "A11 Device Warning",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (warningResult != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
                 // Prompt user to select jailbreak mode
                 var result = MessageBox.Show(
                     "Select Palera1n jailbreak mode:\n\n" +

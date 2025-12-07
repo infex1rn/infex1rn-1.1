@@ -2,12 +2,20 @@
 REM Palera1n Jailbreak - Semi-tethered jailbreak for A8-A11 devices using checkm8
 REM Requires: Device in DFU mode, checkm8 compatible device (A8-A11)
 REM This script performs a palera1n-style jailbreak using checkm8 + ramdisk
+REM
+REM NOTE: This is an educational framework implementation showing the palera1n workflow.
+REM The checkm8 exploit and boot chain are fully functional. The SSH payload operations
+REM are placeholders - users should provide their own ramdisk with jailbreak scripts.
+REM See palera1n.com for complete ramdisk packages with actual jailbreak payloads.
 
 echo ===============================================
 echo [*] Palera1n Jailbreak for infex1rn
 echo [*] Supported: A8-A11 devices (iPhone 6s - iPhone X)
 echo [*] iOS: 15.0 - 18.x
 echo ===============================================
+echo.
+echo [!] NOTE: This script provides the palera1n workflow framework.
+echo [!] Ensure your ramdisk contains actual jailbreak scripts/payloads.
 echo.
 
 REM Detect mode: rootful or rootless
@@ -103,7 +111,7 @@ if errorlevel 1 (
     echo [!] Warning: Trust cache not found (continuing without it)
 )
 
-REM Step 4: Send ramdisk
+REM Step 7: Send ramdisk
 echo [*] Step 7: Sending SSH ramdisk...
 libimobiledevice\irecovery.exe -f ramdisks\ramdisk.dmg 2>nul
 if errorlevel 1 (
@@ -111,19 +119,25 @@ if errorlevel 1 (
     echo [!] Please place your ramdisk file in the ramdisks/ directory
 )
 
-REM Step 5: Boot ramdisk
+REM Step 8: Boot ramdisk
 echo [*] Step 8: Booting ramdisk with jailbreak payload...
 libimobiledevice\irecovery.exe -c ramdisk
 echo.
 
-REM Step 6: Wait for device to boot into ramdisk
+REM Step 9: Wait for device to boot into ramdisk
 echo [*] Step 9: Waiting for device to boot (45 seconds)...
 echo [*] The device should show verbose boot text...
 timeout /t 45 /nobreak >nul
 
-REM Step 7: Apply jailbreak modifications
+REM Step 10: Apply jailbreak modifications
 echo [*] Step 10: Applying Palera1n jailbreak...
 echo.
+
+REM NOTE: The actual jailbreak operations below are placeholders showing what WOULD
+REM be done via SSH connection to the booted ramdisk. In a full implementation,
+REM these would use SSH client (libimobiledevice\iproxy.exe + ssh commands) to
+REM connect to the device and run the actual jailbreak scripts.
+REM This script demonstrates the workflow for educational purposes.
 
 if /i "%JAILBREAK_MODE%"=="rootful" (
     echo [*] ROOTFUL MODE - Full root filesystem access
@@ -164,7 +178,7 @@ echo     [*] Setting up jailbreak detection bypass
 echo     [*] Configuring environment variables
 echo.
 
-REM Step 8: Reboot device
+REM Step 11: Reboot device
 echo [*] Step 13: Finalizing jailbreak...
 echo [*] The device will now reboot...
 libimobiledevice\irecovery.exe -c reboot 2>nul
